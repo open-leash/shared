@@ -12,6 +12,15 @@ export type AgentKind =
   | "zapier-agents"
   | "openai-codex-cloud"
   | "cursor"
+  | "gemini"
+  | "opencode"
+  | "cline"
+  | "continue"
+  | "windsurf"
+  | "github-copilot"
+  | "kiro"
+  | "aider"
+  | "zed"
   | "unknown";
 
 export type HookEventName =
@@ -24,6 +33,365 @@ export type HookEventName =
   | "Notification"
   | "SessionEnd"
   | "Stop";
+
+export type PipelineEvent =
+  | "openleash.startup"
+  | "agent.detected"
+  | "skill.changed"
+  | "prompt.beforeSubmit"
+  | "agent.response"
+  | "tool.beforeUse"
+  | "tool.afterUse"
+  | "session.started"
+  | "session.ended";
+
+export type PluginPermission =
+  | "event:read"
+  | "prompt:read"
+  | "prompt:write"
+  | "tool:read"
+  | "decision:write"
+  | "model:invoke"
+  | "network:access"
+  | "filesystem:read"
+  | "filesystem:write"
+  | "storage:read"
+  | "storage:write"
+  | "audit:write"
+  | "notification:send";
+
+export type PluginEffect =
+  | "observe"
+  | "transform"
+  | "ask"
+  | "deny"
+  | "notify"
+  | "inventory";
+
+export type PluginRuntime =
+  | "node"
+  | "openleash-core";
+
+export type PluginOrdering = {
+  before?: string[];
+  after?: string[];
+  priority?: number;
+};
+
+export type PluginSettingSchema = {
+  type: "object";
+  additionalProperties?: boolean;
+  properties?: Record<string, unknown>;
+  required?: string[];
+};
+
+export type OpenLeashPluginManifest = {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  publisher: "openleash" | string;
+  runtime: PluginRuntime;
+  entrypoint: string;
+  events: PipelineEvent[];
+  permissions: PluginPermission[];
+  effects: PluginEffect[];
+  ordering?: PluginOrdering;
+  configSchema?: PluginSettingSchema;
+  defaultConfig?: Record<string, unknown>;
+  tags?: string[];
+};
+
+export type PluginSettingState = {
+  enabled: boolean;
+  config: Record<string, unknown>;
+  orderingPriority?: number | null;
+  updatedAt?: string;
+};
+
+export type PluginCatalogItem = OpenLeashPluginManifest & {
+  settings: PluginSettingState;
+};
+
+export const FIRST_PARTY_PLUGIN_MANIFESTS = [
+  {
+    id: "openleash.prompt-compression",
+    name: "Prompt Compression",
+    description: "Compresses user prompts before they reach the agent model to reduce token usage.",
+    version: "1.0.0",
+    publisher: "openleash",
+    runtime: "openleash-core",
+    entrypoint: "plugins/prompt-compression",
+    events: ["prompt.beforeSubmit"],
+    permissions: ["event:read", "prompt:read", "prompt:write", "model:invoke", "audit:write"],
+    effects: ["transform", "observe"],
+    ordering: { priority: 100, before: ["openleash.dlp"] },
+    configSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        enabled: { type: "boolean" },
+        level: { enum: ["light", "standard", "maximum"] },
+        conciseResponse: { type: "boolean" },
+        model: { type: "string" }
+      }
+    },
+    defaultConfig: {
+      enabled: false,
+      level: "standard",
+      conciseResponse: false
+    },
+    tags: ["tokens", "cost", "prompt"]
+  },
+  {
+    id: "openleash.skill-scanner",
+    name: "Skill Scanner",
+    description: "Scans agent skills for suspicious instructions and records skill inventory.",
+    version: "1.0.0",
+    publisher: "openleash",
+    runtime: "openleash-core",
+    entrypoint: "plugins/skill-scanner",
+    events: ["openleash.startup", "agent.detected", "skill.changed"],
+    permissions: ["event:read", "filesystem:read", "decision:write", "model:invoke", "audit:write", "notification:send"],
+    effects: ["observe", "ask", "inventory"],
+    ordering: { priority: 150 },
+    defaultConfig: {
+      enabled: true,
+      suspiciousRiskThreshold: 50
+    },
+    tags: ["skills", "security", "inventory"]
+  },
+  {
+    id: "openleash.dlp",
+    name: "Data Leakage Prevention",
+    description: "Masks or blocks sensitive prompt data before submission.",
+    version: "1.0.0",
+    publisher: "openleash",
+    runtime: "openleash-core",
+    entrypoint: "plugins/dlp",
+    events: ["prompt.beforeSubmit"],
+    permissions: ["event:read", "prompt:read", "prompt:write", "decision:write", "model:invoke", "audit:write"],
+    effects: ["transform", "deny", "observe"],
+    ordering: { priority: 200, after: ["openleash.prompt-compression"] },
+    configSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        enabled: { type: "boolean" },
+        action: { enum: ["mask", "block"] },
+        categories: {
+          type: "array",
+          items: { enum: ["pii", "phi", "tokens", "keys", "credentials"] }
+        },
+        model: { type: "string" }
+      }
+    },
+    defaultConfig: {
+      enabled: false,
+      action: "mask",
+      categories: ["pii", "phi", "tokens", "keys", "credentials"]
+    },
+    tags: ["security", "privacy", "prompt"]
+  },
+  {
+    id: "openleash.security-evaluator",
+    name: "Security Evaluator",
+    description: "Evaluates prompts, agent responses, and tool actions against organization policy.",
+    version: "1.0.0",
+    publisher: "openleash",
+    runtime: "openleash-core",
+    entrypoint: "plugins/security-evaluator",
+    events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse"],
+    permissions: ["event:read", "prompt:read", "tool:read", "decision:write", "model:invoke", "audit:write", "notification:send"],
+    effects: ["observe", "ask", "deny"],
+    ordering: { priority: 300, after: ["openleash.dlp"] },
+    configSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        enabled: { type: "boolean" },
+        policySet: { type: "string" }
+      }
+    },
+    defaultConfig: {
+      enabled: true,
+      policySet: "active"
+    },
+    tags: ["security", "policy", "approval"]
+  },
+  {
+    id: "openleash.mcp-scanner",
+    name: "MCP Scanner",
+    description: "Discovers and inventories MCP tool calls for audit and risk review.",
+    version: "1.0.0",
+    publisher: "openleash",
+    runtime: "openleash-core",
+    entrypoint: "plugins/mcp-scanner",
+    events: ["tool.beforeUse", "tool.afterUse"],
+    permissions: ["event:read", "tool:read", "audit:write"],
+    effects: ["observe", "inventory"],
+    ordering: { priority: 400, after: ["openleash.security-evaluator"] },
+    defaultConfig: {
+      enabled: true,
+      redactSecrets: true
+    },
+    tags: ["mcp", "inventory", "audit"]
+  }
+] satisfies OpenLeashPluginManifest[];
+
+export type PluginRunStatus = "skipped" | "passed" | "modified" | "blocked" | "needs_question" | "failed";
+
+export type PluginFinding = {
+  title: string;
+  severity: "info" | "low" | "medium" | "high" | "critical";
+  summary: string;
+  evidence?: string[];
+};
+
+export type PluginRunRecord = {
+  pluginId: string;
+  event: PipelineEvent;
+  status: PluginRunStatus;
+  summary: string;
+  durationMs?: number;
+  findings?: PluginFinding[];
+  metadata?: Record<string, unknown>;
+};
+
+export type PluginPromptCompressionLevel = "light" | "standard" | "maximum";
+export type PluginDlpCategory = "pii" | "phi" | "tokens" | "keys" | "credentials";
+export type PluginDlpAction = "block" | "mask";
+
+export type PluginPromptCompressionRequest = {
+  prompt: string;
+  level: PluginPromptCompressionLevel;
+  conciseResponse?: boolean;
+  model?: string;
+};
+
+export type PluginPromptCompressionConfig = {
+  enabled: boolean;
+  level: PluginPromptCompressionLevel;
+  conciseResponse: boolean;
+  model: string;
+};
+
+export type PluginPromptCompressionResult = {
+  prompt: string;
+  model: string;
+  originalLength: number;
+  compressedLength: number;
+  ratio: number;
+};
+
+export type PluginDlpInspectionRequest = {
+  prompt: string;
+  action: PluginDlpAction;
+  categories: PluginDlpCategory[];
+  model?: string;
+};
+
+export type PluginDlpConfig = {
+  enabled: boolean;
+  action: PluginDlpAction;
+  categories: PluginDlpCategory[];
+  model: string;
+};
+
+export type PluginPromptPipelineConfig = {
+  compression: PluginPromptCompressionConfig;
+  dlp: PluginDlpConfig;
+};
+
+export type PluginDlpInspectionResult = {
+  prompt: string;
+  blocked: boolean;
+  matched: boolean;
+  masked: boolean;
+  model: string;
+  categories: PluginDlpCategory[];
+  findings: Array<{ category: PluginDlpCategory; quote: string; reason: string }>;
+};
+
+export type PluginPolicyEvaluationRequest = {
+  request: EvaluationRequest;
+  policies: Policy[];
+};
+
+export type PluginPolicyEvaluationResult = {
+  results: PolicyDecision[];
+  model: string;
+};
+
+export type PluginStorageScope = {
+  userId?: string;
+  agentKind?: string;
+  sessionId?: string;
+  conversationId?: string;
+  projectPath?: string;
+  key?: string;
+};
+
+export type PluginStorageRead<T = unknown> = {
+  key?: string;
+  scope?: PluginStorageScope;
+  value: T;
+  updatedAt: string;
+  expiresAt?: string | null;
+};
+
+export type PluginStorageGetRequest = {
+  key: string;
+  scope?: PluginStorageScope;
+};
+
+export type PluginStorageSetRequest = {
+  key: string;
+  value: unknown;
+  scope?: PluginStorageScope;
+  ttlSeconds?: number;
+};
+
+export type PluginStorageListRequest = {
+  keyPrefix?: string;
+  scope?: PluginStorageScope;
+  limit?: number;
+};
+
+export type PluginNotificationRequest = {
+  level: "info" | "warning" | "critical";
+  title: string;
+  summary: string;
+  dedupeKey?: string;
+  scope?: PluginStorageScope;
+  minIntervalSeconds?: number;
+};
+
+export type PluginNotificationResult = {
+  sent: boolean;
+  deduped: boolean;
+};
+
+export type PluginCapabilities = {
+  prompt: {
+    compress(request: PluginPromptCompressionRequest): Promise<PluginPromptCompressionResult>;
+  };
+  dlp: {
+    inspect(request: PluginDlpInspectionRequest): Promise<PluginDlpInspectionResult>;
+  };
+  security: {
+    evaluatePolicies(request: PluginPolicyEvaluationRequest): Promise<PluginPolicyEvaluationResult>;
+  };
+  storage: {
+    get<T = unknown>(request: PluginStorageGetRequest): Promise<PluginStorageRead<T> | undefined>;
+    set(request: PluginStorageSetRequest): Promise<PluginStorageRead>;
+    list<T = unknown>(request?: PluginStorageListRequest): Promise<Array<PluginStorageRead<T>>>;
+    delete(request: PluginStorageGetRequest): Promise<void>;
+  };
+  notification: {
+    send(request: PluginNotificationRequest): Promise<PluginNotificationResult>;
+  };
+};
 
 export type OpenLeashEvent = {
   eventName: HookEventName;
@@ -145,6 +513,7 @@ export type MobileAuthExchangeRequest = {
   authorizationCode?: string;
   idToken?: string;
   redirectUri: string;
+  provisionUser?: boolean;
 };
 
 export type MobileAuthExchangeResponse = {
@@ -226,12 +595,21 @@ export type MobileDecisionResolveResponse = {
   resolved_at: string;
 } | null;
 
-export type HookAgentSlug = "claude" | "codex" | "cursor" | "openclaw" | "nanoclaw";
+export type HookAgentSlug =
+  | "claude"
+  | "codex"
+  | "cursor"
+  | "gemini"
+  | "opencode"
+  | "openclaw"
+  | "nanoclaw";
 
 export const HOOK_AGENT_METADATA: Record<HookAgentSlug, { kind: AgentKind; displayName: string }> = {
   claude: { kind: "claude-code", displayName: "Claude Code" },
   codex: { kind: "codex", displayName: "OpenAI Codex" },
   cursor: { kind: "cursor", displayName: "Cursor" },
+  gemini: { kind: "gemini", displayName: "Google Gemini CLI" },
+  opencode: { kind: "opencode", displayName: "OpenCode" },
   openclaw: { kind: "openclaw", displayName: "OpenClaw" },
   nanoclaw: { kind: "nanoclaw", displayName: "NanoClaw" }
 };
@@ -258,11 +636,14 @@ export const OPENLEASH_API_CONTRACTS = {
   tenantDecisionResolve: "2026-05-16.tenant-decision-resolve.v1",
   tenantTrayStatus: "2026-05-16.tenant-tray-status.v1",
   tenantSkillObservation: "2026-05-27.tenant-skill-observation.v1",
+  tenantPluginsRead: "2026-06-20.tenant-plugins-read.v1",
   desktopEnroll: "2026-06-03.desktop-enroll.v1",
   adminOverview: "2026-05-16.admin-overview.v1",
   adminMcpServers: "2026-05-27.admin-mcp-servers.v1",
   adminMcpServerDetail: "2026-05-27.admin-mcp-server-detail.v1",
   adminSkills: "2026-05-27.admin-skills.v1",
+  adminPluginsRead: "2026-06-20.admin-plugins-read.v1",
+  adminPluginsWrite: "2026-06-20.admin-plugins-write.v1",
   adminLogs: "2026-06-03.admin-logs.v1",
   adminLogDetail: "2026-06-03.admin-log-detail.v1",
   adminTriggers: "2026-05-16.admin-triggers.v1",
@@ -321,7 +702,7 @@ export function apiContractFor(functionName: OpenLeashApiFunction) {
   };
 }
 
-export type OpenLeashEdition = "standalone" | "managed-cloud" | "managed-self-hosted";
+export type OpenLeashEdition = "managed-cloud" | "managed-self-hosted";
 
 export type OpenLeashClientMode = "community" | "cloud" | "enterprise";
 
@@ -330,23 +711,21 @@ export type BillingMode =
   | "external";
 
 export type DeploymentMode =
-  | "local-only"
   | "openleash-cloud"
   | "self-hosted-private";
 
 export type DataStoreMode =
-  | "local-db"
   | "postgres";
 
 export type EditionCapabilities = {
   edition: OpenLeashEdition;
   deploymentMode: DeploymentMode;
   billingMode: BillingMode;
-  dashboard: "settings" | "ciso-dashboard";
-  endUserControls: "full-local-control" | "tray-and-approvals-only";
-  rulesManagedBy: "end-user" | "admin-dashboard";
-  identity: "none" | "sso-oauth";
-  modelKey: "byok-local" | "byok-tenant" | "managed";
+  dashboard: "ciso-dashboard";
+  endUserControls: "tray-and-approvals-only";
+  rulesManagedBy: "admin-dashboard";
+  identity: "sso-oauth";
+  modelKey: "byok-tenant" | "managed";
   dataStore: DataStoreMode;
   mdmDeployment: boolean;
   automaticUpdates: boolean;
@@ -452,21 +831,6 @@ function mcpToolCallFromRaw(raw: unknown): Pick<McpToolCall, "serverName" | "too
 }
 
 export const EDITION_CAPABILITIES: Record<OpenLeashEdition, EditionCapabilities[]> = {
-  standalone: [
-    {
-      edition: "standalone",
-      deploymentMode: "local-only",
-      billingMode: "none",
-      dashboard: "settings",
-      endUserControls: "full-local-control",
-      rulesManagedBy: "end-user",
-      identity: "none",
-      modelKey: "byok-local",
-      dataStore: "local-db",
-      mdmDeployment: false,
-      automaticUpdates: true
-    }
-  ],
   "managed-cloud": [
     {
       edition: "managed-cloud",
