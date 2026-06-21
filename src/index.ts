@@ -336,9 +336,9 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
 export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((plugin, index) => {
   const details: Record<string, Pick<PluginMarketplaceListing, "shortDescription" | "longDescription" | "heroTagline" | "iconText" | "visualPng" | "installCount" | "downloadCount" | "weeklyDownloadCount" | "trendPercent" | "rating" | "featuredRank" | "seoTitle" | "seoDescription">> = {
     "openleash.prompt-compression": {
-      shortDescription: "Compress runaway prompts before they reach models.",
-      longDescription: "Token Saver trims oversized prompts before submission, keeps useful context, and can add concise-response guidance so teams spend fewer tokens without retraining their agents.",
-      heroTagline: "Cut prompt spend without slowing developers down.",
+      shortDescription: "Trim noisy context before every model call.",
+      longDescription: "Token Saver compresses oversized prompts, preserves the useful context, and keeps agent runs cheaper without changing how developers work.",
+      heroTagline: "Cut agent and prompt costs.",
       iconText: "TS",
       visualPng: "/plugins/token-saver.png",
       installCount: 18420,
@@ -348,12 +348,12 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       rating: 4.9,
       featuredRank: 1,
       seoTitle: "token-saver Plugin for OpenLeash",
-      seoDescription: "Install token-saver to compress AI agent prompts, reduce token usage, and control model spend across OpenLeash-managed agents."
+      seoDescription: "Install token-saver to reduce AI agent token usage, compress prompts, and control model spend across OpenLeash-managed agents."
     },
     "openleash.security-evaluator": {
-      shortDescription: "Evaluate prompts, responses, and tool use against policy.",
-      longDescription: "sec-evaluator applies your active OpenLeash policies to prompts, responses, and tool actions, producing approvals, denials, and auditable findings from one managed pipeline.",
-      heroTagline: "Turn organization policy into live agent guardrails.",
+      shortDescription: "Approve, deny, or log risky agent actions.",
+      longDescription: "sec-evaluator applies active OpenLeash policies to prompts, responses, and tool use so teams get live decisions and auditable findings from one pipeline.",
+      heroTagline: "Enforce policy on every agent move.",
       iconText: "SE",
       visualPng: "/plugins/sec-evaluator.png",
       installCount: 12680,
@@ -363,12 +363,12 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       rating: 4.8,
       featuredRank: 2,
       seoTitle: "sec-evaluator Plugin for OpenLeash",
-      seoDescription: "Use sec-evaluator to enforce OpenLeash policies across AI agent prompts, responses, and tool calls."
+      seoDescription: "Use sec-evaluator to enforce security policy across AI agent prompts, responses, and tool calls."
     },
     "openleash.dlp": {
-      shortDescription: "Mask or block sensitive prompt data before it leaves.",
-      longDescription: "Data Leakage Prevention detects sensitive categories such as keys, credentials, tokens, PHI, and PII before prompts leave the agent workflow.",
-      heroTagline: "Keep secrets and customer data out of model prompts.",
+      shortDescription: "Mask secrets before agents send them.",
+      longDescription: "Data Leakage Prevention detects keys, credentials, tokens, PHI, and PII before prompts leave the agent workflow.",
+      heroTagline: "Stop sensitive data from leaking.",
       iconText: "DL",
       visualPng: "/plugins/data-leakage-prevention.png",
       installCount: 10140,
@@ -378,12 +378,12 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       rating: 4.8,
       featuredRank: 3,
       seoTitle: "data-leakage-prevention Plugin for OpenLeash",
-      seoDescription: "Install data-leakage-prevention to mask or block sensitive AI agent prompt data before it reaches model providers."
+      seoDescription: "Install data-leakage-prevention to mask or block secrets, credentials, PII, and sensitive prompt data before it reaches model providers."
     },
     "openleash.skill-scanner": {
-      shortDescription: "Inventory and review agent skills as they appear.",
-      longDescription: "Skill Scanner watches agent skill folders, inventories new skills, and flags suspicious instructions for review before they quietly spread across developer machines.",
-      heroTagline: "See every agent skill before it becomes hidden behavior.",
+      shortDescription: "Catch suspicious instructions before they spread.",
+      longDescription: "Skill Scanner watches agent skill folders, inventories new skills, and flags risky instructions before they quietly spread across developer machines.",
+      heroTagline: "Scan every skill for malicious behavior.",
       iconText: "SK",
       visualPng: "/plugins/skill-scanner.png",
       installCount: 9300,
@@ -393,12 +393,12 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       rating: 4.7,
       featuredRank: 4,
       seoTitle: "skill-scanner Plugin for OpenLeash",
-      seoDescription: "Use skill-scanner to inventory and review AI agent skills, suspicious instructions, and skill drift in OpenLeash."
+      seoDescription: "Use skill-scanner to detect malicious AI agent skills, suspicious instructions, and skill drift in OpenLeash."
     },
     "openleash.mcp-scanner": {
-      shortDescription: "Track MCP tools and calls for audit and risk review.",
-      longDescription: "MCP Scanner discovers MCP servers and tool calls, redacts secrets from audit data, and gives security teams a searchable view of tool usage.",
-      heroTagline: "Make MCP tool usage visible and reviewable.",
+      shortDescription: "See every MCP server, tool, and call.",
+      longDescription: "MCP Scanner discovers MCP servers and tool calls, redacts secrets from audit data, and keeps tool usage searchable.",
+      heroTagline: "Map your MCP attack surface.",
       iconText: "MC",
       visualPng: "/plugins/mcp-scanner.png",
       installCount: 8120,
@@ -408,12 +408,12 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       rating: 4.7,
       featuredRank: 5,
       seoTitle: "mcp-scanner Plugin for OpenLeash",
-      seoDescription: "Install mcp-scanner to audit Model Context Protocol tools, calls, and risk signals across OpenLeash-managed agents."
+      seoDescription: "Install mcp-scanner to audit MCP servers, tool calls, and risk signals across OpenLeash-managed agents."
     },
     "openleash.siem-exporter": {
-      shortDescription: "Forward OpenLeash security events to SOC and SIEM tools.",
-      longDescription: "SIEM Exporter sends OpenLeash decisions, policy findings, tool events, and identity context to security operations platforms using ECS-shaped JSON, Splunk HEC-compatible payloads, or a generic HTTPS webhook.",
-      heroTagline: "Connect OpenLeash agent security telemetry to your SOC.",
+      shortDescription: "Send agent incidents to your SOC stack.",
+      longDescription: "SIEM Exporter forwards OpenLeash decisions, policy findings, tool events, and identity context using Splunk HEC, ECS-shaped JSON, or HTTPS webhooks.",
+      heroTagline: "Export agent security events to SIEM.",
       iconText: "SX",
       visualPng: "/plugins/siem-exporter.png",
       installCount: 6540,
@@ -423,7 +423,7 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       rating: 4.7,
       featuredRank: 6,
       seoTitle: "siem-exporter Plugin for OpenLeash",
-      seoDescription: "Install siem-exporter to forward OpenLeash AI agent security events, policy findings, and incidents to SIEM and SOC systems."
+      seoDescription: "Install siem-exporter to forward OpenLeash AI agent security events, policy findings, and incidents to SIEM and SOC tools."
     }
   };
   const detail = details[plugin.id] ?? {
