@@ -119,6 +119,7 @@ export type PluginMarketplaceListing = OpenLeashPluginManifest & {
   repositoryUrl?: string;
   documentationUrl?: string;
   iconText: string;
+  visualPng?: string;
   installCount: number;
   downloadCount: number;
   weeklyDownloadCount: number;
@@ -333,12 +334,13 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
 ] satisfies OpenLeashPluginManifest[];
 
 export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((plugin, index) => {
-  const details: Record<string, Pick<PluginMarketplaceListing, "shortDescription" | "longDescription" | "heroTagline" | "iconText" | "installCount" | "downloadCount" | "weeklyDownloadCount" | "trendPercent" | "rating" | "featuredRank" | "seoTitle" | "seoDescription">> = {
+  const details: Record<string, Pick<PluginMarketplaceListing, "shortDescription" | "longDescription" | "heroTagline" | "iconText" | "visualPng" | "installCount" | "downloadCount" | "weeklyDownloadCount" | "trendPercent" | "rating" | "featuredRank" | "seoTitle" | "seoDescription">> = {
     "openleash.prompt-compression": {
       shortDescription: "Compress runaway prompts before they reach models.",
       longDescription: "Token Saver trims oversized prompts before submission, keeps useful context, and can add concise-response guidance so teams spend fewer tokens without retraining their agents.",
       heroTagline: "Cut prompt spend without slowing developers down.",
       iconText: "TS",
+      visualPng: "/plugins/token-saver.png",
       installCount: 18420,
       downloadCount: 42380,
       weeklyDownloadCount: 2840,
@@ -353,6 +355,7 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       longDescription: "sec-evaluator applies your active OpenLeash policies to prompts, responses, and tool actions, producing approvals, denials, and auditable findings from one managed pipeline.",
       heroTagline: "Turn organization policy into live agent guardrails.",
       iconText: "SE",
+      visualPng: "/plugins/sec-evaluator.png",
       installCount: 12680,
       downloadCount: 31920,
       weeklyDownloadCount: 2210,
@@ -367,6 +370,7 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       longDescription: "Data Leakage Prevention detects sensitive categories such as keys, credentials, tokens, PHI, and PII before prompts leave the agent workflow.",
       heroTagline: "Keep secrets and customer data out of model prompts.",
       iconText: "DL",
+      visualPng: "/plugins/data-leakage-prevention.png",
       installCount: 10140,
       downloadCount: 27650,
       weeklyDownloadCount: 1960,
@@ -381,6 +385,7 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       longDescription: "Skill Scanner watches agent skill folders, inventories new skills, and flags suspicious instructions for review before they quietly spread across developer machines.",
       heroTagline: "See every agent skill before it becomes hidden behavior.",
       iconText: "SK",
+      visualPng: "/plugins/skill-scanner.png",
       installCount: 9300,
       downloadCount: 21480,
       weeklyDownloadCount: 1510,
@@ -395,6 +400,7 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       longDescription: "MCP Scanner discovers MCP servers and tool calls, redacts secrets from audit data, and gives security teams a searchable view of tool usage.",
       heroTagline: "Make MCP tool usage visible and reviewable.",
       iconText: "MC",
+      visualPng: "/plugins/mcp-scanner.png",
       installCount: 8120,
       downloadCount: 18890,
       weeklyDownloadCount: 1320,
@@ -409,6 +415,7 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
       longDescription: "SIEM Exporter sends OpenLeash decisions, policy findings, tool events, and identity context to security operations platforms using ECS-shaped JSON, Splunk HEC-compatible payloads, or a generic HTTPS webhook.",
       heroTagline: "Connect OpenLeash agent security telemetry to your SOC.",
       iconText: "SX",
+      visualPng: "/plugins/siem-exporter.png",
       installCount: 6540,
       downloadCount: 14980,
       weeklyDownloadCount: 980,
@@ -424,6 +431,7 @@ export const FIRST_PARTY_PLUGIN_MARKETPLACE = FIRST_PARTY_PLUGIN_MANIFESTS.map((
     longDescription: plugin.description,
     heroTagline: plugin.description,
     iconText: "OL",
+    visualPng: `/plugins/${plugin.slug ?? plugin.id.split(".").pop() ?? plugin.id}.png`,
     installCount: Math.max(1000, 5000 - index * 500),
     downloadCount: Math.max(2000, 12000 - index * 900),
     weeklyDownloadCount: Math.max(300, 1200 - index * 100),
