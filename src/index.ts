@@ -38,6 +38,7 @@ export type PipelineEvent =
   | "openleash.startup"
   | "agent.detected"
   | "skill.changed"
+  | "log.emitted"
   | "prompt.beforeSubmit"
   | "agent.response"
   | "tool.beforeUse"
@@ -58,6 +59,9 @@ export type PluginPermission =
   | "storage:read"
   | "storage:write"
   | "audit:write"
+  | "log:write"
+  | "signal:write"
+  | "usage:write"
   | "notification:send";
 
 export type PluginEffect =
@@ -168,7 +172,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     runtime: "openleash-core",
     entrypoint: "plugins/prompt-compression",
     events: ["prompt.beforeSubmit"],
-    permissions: ["event:read", "prompt:read", "prompt:write", "model:invoke", "audit:write"],
+    permissions: ["event:read", "prompt:read", "prompt:write", "model:invoke", "audit:write", "usage:write"],
     effects: ["transform", "observe"],
     ordering: { priority: 100, before: ["openleash.dlp"] },
     configSchema: {
@@ -198,7 +202,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     runtime: "openleash-core",
     entrypoint: "plugins/skill-scanner",
     events: ["openleash.startup", "agent.detected", "skill.changed"],
-    permissions: ["event:read", "filesystem:read", "decision:write", "model:invoke", "audit:write", "notification:send"],
+    permissions: ["event:read", "filesystem:read", "decision:write", "model:invoke", "audit:write", "log:write", "signal:write", "notification:send"],
     effects: ["observe", "ask", "inventory"],
     ordering: { priority: 150 },
     defaultConfig: {
@@ -217,7 +221,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     runtime: "openleash-core",
     entrypoint: "plugins/dlp",
     events: ["prompt.beforeSubmit"],
-    permissions: ["event:read", "prompt:read", "prompt:write", "decision:write", "model:invoke", "audit:write"],
+    permissions: ["event:read", "prompt:read", "prompt:write", "decision:write", "model:invoke", "audit:write", "signal:write"],
     effects: ["transform", "deny", "observe"],
     ordering: { priority: 200, after: ["openleash.prompt-compression"] },
     configSchema: {
@@ -250,7 +254,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     runtime: "openleash-core",
     entrypoint: "plugins/security-evaluator",
     events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse"],
-    permissions: ["event:read", "prompt:read", "tool:read", "decision:write", "model:invoke", "audit:write", "notification:send"],
+    permissions: ["event:read", "prompt:read", "tool:read", "decision:write", "model:invoke", "audit:write", "log:write", "signal:write", "usage:write", "notification:send"],
     effects: ["observe", "ask", "deny"],
     ordering: { priority: 300, after: ["openleash.dlp"] },
     configSchema: {
@@ -277,7 +281,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     runtime: "openleash-core",
     entrypoint: "plugins/mcp-scanner",
     events: ["tool.beforeUse", "tool.afterUse"],
-    permissions: ["event:read", "tool:read", "audit:write"],
+    permissions: ["event:read", "tool:read", "audit:write", "signal:write"],
     effects: ["observe", "inventory"],
     ordering: { priority: 400, after: ["openleash.security-evaluator"] },
     defaultConfig: {
@@ -295,8 +299,8 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     publisher: "openleash",
     runtime: "openleash-core",
     entrypoint: "plugins/siem-exporter",
-    events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse", "session.started", "session.ended", "skill.changed"],
-    permissions: ["event:read", "prompt:read", "tool:read", "network:access", "audit:write"],
+    events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse", "session.started", "session.ended", "skill.changed", "log.emitted"],
+    permissions: ["event:read", "prompt:read", "tool:read", "network:access", "audit:write", "log:write"],
     effects: ["observe", "notify"],
     ordering: { priority: 900, after: ["openleash.security-evaluator", "openleash.mcp-scanner"] },
     configSchema: {
@@ -588,6 +592,105 @@ export type PluginNotificationResult = {
   deduped: boolean;
 };
 
+export type PluginLogLevel = "debug" | "info" | "warn" | "error" | "security";
+
+export type PluginLogRequest = {
+  level: PluginLogLevel;
+  message: string;
+  code?: string;
+  category?: "system" | "plugin" | "security" | "audit";
+  data?: Record<string, unknown>;
+  scope?: PluginStorageScope;
+};
+
+export type PluginLogRecord = {
+  id?: string;
+  pluginId: string;
+  level: PluginLogLevel;
+  message: string;
+  code?: string;
+  category: "system" | "plugin" | "security" | "audit";
+  data: Record<string, unknown>;
+  scope?: PluginStorageScope;
+  createdAt: string;
+};
+
+export type PluginSignalKind =
+  | "security.finding"
+  | "policy.decision"
+  | "approval.event"
+  | "secret.detected"
+  | "tool.risk"
+  | "mcp.discovery"
+  | "identity.risk"
+  | "audit.event"
+  | "plugin.health"
+  | "export.status";
+
+export type PluginSignalSeverity = "info" | "low" | "medium" | "high" | "critical";
+
+export type PluginSignalRequest = {
+  kind: PluginSignalKind;
+  severity?: PluginSignalSeverity;
+  title: string;
+  summary?: string;
+  decision?: "allow" | "ask" | "deny" | "blocked" | "approved" | "rejected" | "observed";
+  status?: string;
+  target?: {
+    type?: string;
+    name?: string;
+    id?: string;
+  };
+  evidence?: unknown;
+  details?: Record<string, unknown>;
+  correlationKeys?: string[];
+  occurredAt?: string;
+};
+
+export type PluginSignalRecord = PluginSignalRequest & {
+  id?: string;
+  pluginId: string;
+  organizationId?: string;
+  conversationEventId?: string;
+  userId?: string;
+  computerId?: string;
+  agentRuntimeId?: string;
+  agentKind?: string;
+  sessionId?: string;
+  projectPath?: string;
+  createdAt: string;
+};
+
+export type PluginUsageKind = "llm.tokens" | "plugin.compute" | "plugin.operation" | "network.egress" | "storage.bytes";
+
+export type PluginUsageRecordRequest = {
+  kind: PluginUsageKind;
+  quantity?: number;
+  unit?: string;
+  model?: string;
+  provider?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  savedTokens?: number;
+  estimatedCostUsd?: number;
+  details?: Record<string, unknown>;
+  occurredAt?: string;
+};
+
+export type PluginUsageRecord = PluginUsageRecordRequest & {
+  id?: string;
+  pluginId: string;
+  organizationId?: string;
+  conversationEventId?: string;
+  userId?: string;
+  computerId?: string;
+  agentRuntimeId?: string;
+  agentKind?: string;
+  sessionId?: string;
+  projectPath?: string;
+  createdAt: string;
+};
+
 export type PluginCapabilities = {
   prompt: {
     compress(request: PluginPromptCompressionRequest): Promise<PluginPromptCompressionResult>;
@@ -606,6 +709,15 @@ export type PluginCapabilities = {
   };
   notification: {
     send(request: PluginNotificationRequest): Promise<PluginNotificationResult>;
+  };
+  log: {
+    emit(request: PluginLogRequest): Promise<PluginLogRecord>;
+  };
+  signals: {
+    emit(request: PluginSignalRequest): Promise<PluginSignalRecord>;
+  };
+  usage: {
+    record(request: PluginUsageRecordRequest): Promise<PluginUsageRecord>;
   };
 };
 
@@ -855,6 +967,7 @@ export const OPENLEASH_API_CONTRACTS = {
   tenantPluginsRead: "2026-06-20.tenant-plugins-read.v1",
   desktopEnroll: "2026-06-03.desktop-enroll.v1",
   adminOverview: "2026-05-16.admin-overview.v1",
+  adminSecurity: "2026-06-22.admin-security.v1",
   adminMcpServers: "2026-05-27.admin-mcp-servers.v1",
   adminMcpServerDetail: "2026-05-27.admin-mcp-server-detail.v1",
   adminSkills: "2026-05-27.admin-skills.v1",

@@ -1,7 +1,7 @@
 export type AgentKind = "claude-code" | "codex" | "openclaw" | "nanoclaw" | "salesforce-agentforce" | "azure-ai-foundry" | "microsoft-copilot-studio" | "aws-bedrock-agentcore" | "google-vertex-ai" | "n8n" | "zapier-agents" | "openai-codex-cloud" | "cursor" | "gemini" | "opencode" | "cline" | "continue" | "windsurf" | "github-copilot" | "kiro" | "aider" | "zed" | "unknown";
 export type HookEventName = "SessionStart" | "UserPromptSubmit" | "PreToolUse" | "PostToolUse" | "SubagentStart" | "SubagentStop" | "Notification" | "SessionEnd" | "Stop";
-export type PipelineEvent = "openleash.startup" | "agent.detected" | "skill.changed" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended";
-export type PluginPermission = "event:read" | "prompt:read" | "prompt:write" | "tool:read" | "decision:write" | "model:invoke" | "network:access" | "filesystem:read" | "filesystem:write" | "storage:read" | "storage:write" | "audit:write" | "notification:send";
+export type PipelineEvent = "openleash.startup" | "agent.detected" | "skill.changed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended";
+export type PluginPermission = "event:read" | "prompt:read" | "prompt:write" | "tool:read" | "decision:write" | "model:invoke" | "network:access" | "filesystem:read" | "filesystem:write" | "storage:read" | "storage:write" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send";
 export type PluginEffect = "observe" | "transform" | "ask" | "deny" | "notify" | "inventory";
 export type PluginRuntime = "node" | "openleash-core";
 export type PluginOrdering = {
@@ -91,7 +91,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: "prompt.beforeSubmit"[];
-    permissions: ("event:read" | "prompt:read" | "prompt:write" | "model:invoke" | "audit:write")[];
+    permissions: ("event:read" | "prompt:read" | "prompt:write" | "model:invoke" | "audit:write" | "usage:write")[];
     effects: ("observe" | "transform")[];
     ordering: {
         priority: number;
@@ -160,7 +160,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: ("openleash.startup" | "agent.detected" | "skill.changed")[];
-    permissions: ("event:read" | "decision:write" | "model:invoke" | "filesystem:read" | "audit:write" | "notification:send")[];
+    permissions: ("event:read" | "decision:write" | "model:invoke" | "filesystem:read" | "audit:write" | "log:write" | "signal:write" | "notification:send")[];
     effects: ("observe" | "ask" | "inventory")[];
     ordering: {
         priority: number;
@@ -199,7 +199,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: "prompt.beforeSubmit"[];
-    permissions: ("event:read" | "prompt:read" | "prompt:write" | "decision:write" | "model:invoke" | "audit:write")[];
+    permissions: ("event:read" | "prompt:read" | "prompt:write" | "decision:write" | "model:invoke" | "audit:write" | "signal:write")[];
     effects: ("observe" | "transform" | "deny")[];
     ordering: {
         priority: number;
@@ -271,7 +271,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: ("prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse")[];
-    permissions: ("event:read" | "prompt:read" | "tool:read" | "decision:write" | "model:invoke" | "audit:write" | "notification:send")[];
+    permissions: ("event:read" | "prompt:read" | "tool:read" | "decision:write" | "model:invoke" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send")[];
     effects: ("observe" | "ask" | "deny")[];
     ordering: {
         priority: number;
@@ -336,7 +336,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: ("tool.beforeUse" | "tool.afterUse")[];
-    permissions: ("event:read" | "tool:read" | "audit:write")[];
+    permissions: ("event:read" | "tool:read" | "audit:write" | "signal:write")[];
     effects: ("observe" | "inventory")[];
     ordering: {
         priority: number;
@@ -374,8 +374,8 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     publisher: string;
     runtime: "openleash-core";
     entrypoint: string;
-    events: ("skill.changed" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended")[];
-    permissions: ("event:read" | "prompt:read" | "tool:read" | "network:access" | "audit:write")[];
+    events: ("skill.changed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended")[];
+    permissions: ("event:read" | "prompt:read" | "tool:read" | "network:access" | "audit:write" | "log:write")[];
     effects: ("observe" | "notify")[];
     ordering: {
         priority: number;
@@ -479,7 +479,7 @@ export declare const FIRST_PARTY_PLUGIN_MARKETPLACE: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: "prompt.beforeSubmit"[];
-    permissions: ("event:read" | "prompt:read" | "prompt:write" | "model:invoke" | "audit:write")[];
+    permissions: ("event:read" | "prompt:read" | "prompt:write" | "model:invoke" | "audit:write" | "usage:write")[];
     effects: ("observe" | "transform")[];
     ordering: {
         priority: number;
@@ -568,7 +568,7 @@ export declare const FIRST_PARTY_PLUGIN_MARKETPLACE: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: ("openleash.startup" | "agent.detected" | "skill.changed")[];
-    permissions: ("event:read" | "decision:write" | "model:invoke" | "filesystem:read" | "audit:write" | "notification:send")[];
+    permissions: ("event:read" | "decision:write" | "model:invoke" | "filesystem:read" | "audit:write" | "log:write" | "signal:write" | "notification:send")[];
     effects: ("observe" | "ask" | "inventory")[];
     ordering: {
         priority: number;
@@ -627,7 +627,7 @@ export declare const FIRST_PARTY_PLUGIN_MARKETPLACE: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: "prompt.beforeSubmit"[];
-    permissions: ("event:read" | "prompt:read" | "prompt:write" | "decision:write" | "model:invoke" | "audit:write")[];
+    permissions: ("event:read" | "prompt:read" | "prompt:write" | "decision:write" | "model:invoke" | "audit:write" | "signal:write")[];
     effects: ("observe" | "transform" | "deny")[];
     ordering: {
         priority: number;
@@ -719,7 +719,7 @@ export declare const FIRST_PARTY_PLUGIN_MARKETPLACE: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: ("prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse")[];
-    permissions: ("event:read" | "prompt:read" | "tool:read" | "decision:write" | "model:invoke" | "audit:write" | "notification:send")[];
+    permissions: ("event:read" | "prompt:read" | "tool:read" | "decision:write" | "model:invoke" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send")[];
     effects: ("observe" | "ask" | "deny")[];
     ordering: {
         priority: number;
@@ -804,7 +804,7 @@ export declare const FIRST_PARTY_PLUGIN_MARKETPLACE: ({
     runtime: "openleash-core";
     entrypoint: string;
     events: ("tool.beforeUse" | "tool.afterUse")[];
-    permissions: ("event:read" | "tool:read" | "audit:write")[];
+    permissions: ("event:read" | "tool:read" | "audit:write" | "signal:write")[];
     effects: ("observe" | "inventory")[];
     ordering: {
         priority: number;
@@ -862,8 +862,8 @@ export declare const FIRST_PARTY_PLUGIN_MARKETPLACE: ({
     publisher: string;
     runtime: "openleash-core";
     entrypoint: string;
-    events: ("skill.changed" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended")[];
-    permissions: ("event:read" | "prompt:read" | "tool:read" | "network:access" | "audit:write")[];
+    events: ("skill.changed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended")[];
+    permissions: ("event:read" | "prompt:read" | "tool:read" | "network:access" | "audit:write" | "log:write")[];
     effects: ("observe" | "notify")[];
     ordering: {
         priority: number;
@@ -1054,6 +1054,85 @@ export type PluginNotificationResult = {
     sent: boolean;
     deduped: boolean;
 };
+export type PluginLogLevel = "debug" | "info" | "warn" | "error" | "security";
+export type PluginLogRequest = {
+    level: PluginLogLevel;
+    message: string;
+    code?: string;
+    category?: "system" | "plugin" | "security" | "audit";
+    data?: Record<string, unknown>;
+    scope?: PluginStorageScope;
+};
+export type PluginLogRecord = {
+    id?: string;
+    pluginId: string;
+    level: PluginLogLevel;
+    message: string;
+    code?: string;
+    category: "system" | "plugin" | "security" | "audit";
+    data: Record<string, unknown>;
+    scope?: PluginStorageScope;
+    createdAt: string;
+};
+export type PluginSignalKind = "security.finding" | "policy.decision" | "approval.event" | "secret.detected" | "tool.risk" | "mcp.discovery" | "identity.risk" | "audit.event" | "plugin.health" | "export.status";
+export type PluginSignalSeverity = "info" | "low" | "medium" | "high" | "critical";
+export type PluginSignalRequest = {
+    kind: PluginSignalKind;
+    severity?: PluginSignalSeverity;
+    title: string;
+    summary?: string;
+    decision?: "allow" | "ask" | "deny" | "blocked" | "approved" | "rejected" | "observed";
+    status?: string;
+    target?: {
+        type?: string;
+        name?: string;
+        id?: string;
+    };
+    evidence?: unknown;
+    details?: Record<string, unknown>;
+    correlationKeys?: string[];
+    occurredAt?: string;
+};
+export type PluginSignalRecord = PluginSignalRequest & {
+    id?: string;
+    pluginId: string;
+    organizationId?: string;
+    conversationEventId?: string;
+    userId?: string;
+    computerId?: string;
+    agentRuntimeId?: string;
+    agentKind?: string;
+    sessionId?: string;
+    projectPath?: string;
+    createdAt: string;
+};
+export type PluginUsageKind = "llm.tokens" | "plugin.compute" | "plugin.operation" | "network.egress" | "storage.bytes";
+export type PluginUsageRecordRequest = {
+    kind: PluginUsageKind;
+    quantity?: number;
+    unit?: string;
+    model?: string;
+    provider?: string;
+    inputTokens?: number;
+    outputTokens?: number;
+    savedTokens?: number;
+    estimatedCostUsd?: number;
+    details?: Record<string, unknown>;
+    occurredAt?: string;
+};
+export type PluginUsageRecord = PluginUsageRecordRequest & {
+    id?: string;
+    pluginId: string;
+    organizationId?: string;
+    conversationEventId?: string;
+    userId?: string;
+    computerId?: string;
+    agentRuntimeId?: string;
+    agentKind?: string;
+    sessionId?: string;
+    projectPath?: string;
+    createdAt: string;
+};
 export type PluginCapabilities = {
     prompt: {
         compress(request: PluginPromptCompressionRequest): Promise<PluginPromptCompressionResult>;
@@ -1072,6 +1151,15 @@ export type PluginCapabilities = {
     };
     notification: {
         send(request: PluginNotificationRequest): Promise<PluginNotificationResult>;
+    };
+    log: {
+        emit(request: PluginLogRequest): Promise<PluginLogRecord>;
+    };
+    signals: {
+        emit(request: PluginSignalRequest): Promise<PluginSignalRecord>;
+    };
+    usage: {
+        record(request: PluginUsageRecordRequest): Promise<PluginUsageRecord>;
     };
 };
 export type OpenLeashEvent = {
@@ -1286,6 +1374,7 @@ export declare const OPENLEASH_API_CONTRACTS: {
     readonly tenantPluginsRead: "2026-06-20.tenant-plugins-read.v1";
     readonly desktopEnroll: "2026-06-03.desktop-enroll.v1";
     readonly adminOverview: "2026-05-16.admin-overview.v1";
+    readonly adminSecurity: "2026-06-22.admin-security.v1";
     readonly adminMcpServers: "2026-05-27.admin-mcp-servers.v1";
     readonly adminMcpServerDetail: "2026-05-27.admin-mcp-server-detail.v1";
     readonly adminSkills: "2026-05-27.admin-skills.v1";
@@ -1335,8 +1424,8 @@ export declare const OPENLEASH_API_CONTRACTS: {
 export type OpenLeashApiFunction = keyof typeof OPENLEASH_API_CONTRACTS;
 export declare function apiVersionHeaders(functionName: OpenLeashApiFunction): Record<string, string>;
 export declare function apiContractFor(functionName: OpenLeashApiFunction): {
-    functionName: "health" | "tenantEnroll" | "tenantEvaluate" | "tenantHookEvaluate" | "tenantDecisionPoll" | "tenantDecisionResolve" | "tenantTrayStatus" | "tenantSkillObservation" | "tenantPluginsRead" | "desktopEnroll" | "adminOverview" | "adminMcpServers" | "adminMcpServerDetail" | "adminSkills" | "adminPluginsRead" | "adminPluginsWrite" | "adminLogs" | "adminLogDetail" | "adminTriggers" | "adminTriggerDetail" | "adminEventDetail" | "adminExternalAgents" | "adminExternalAgentsSync" | "adminProviderUsageRead" | "adminProviderUsageWrite" | "adminProviderUsageSync" | "adminOnboardingRead" | "adminOnboardingWrite" | "adminIdentityRead" | "adminUsersWrite" | "adminDeploymentTokensRead" | "adminDeploymentTokensWrite" | "adminPoliciesRead" | "adminPoliciesWrite" | "adminPromptTransformsRead" | "adminPromptTransformsWrite" | "authSession" | "authLogout" | "authSsoAuthorize" | "authSsoCallback" | "authGoogleCallback" | "mobileBootstrap" | "mobileAuthStart" | "mobileAuthExchange" | "mobileModelKey" | "mobileDeviceRegister" | "mobileState" | "mobileDecisionResolve" | "organizationsRead" | "organizationsWrite" | "organizationSsoProviders" | "clientUpdateCheck" | "clientUpdateLatest" | "clientReleasePublish" | "localEvaluate" | "localHookEvaluate";
-    version: "2026-05-16.health.v1" | "2026-05-16.tenant-enroll.v1" | "2026-05-16.tenant-evaluate.v1" | "2026-05-22.tenant-hook-evaluate.v1" | "2026-05-16.tenant-decision-poll.v1" | "2026-05-16.tenant-decision-resolve.v1" | "2026-05-16.tenant-tray-status.v1" | "2026-05-27.tenant-skill-observation.v1" | "2026-06-20.tenant-plugins-read.v1" | "2026-06-03.desktop-enroll.v1" | "2026-05-16.admin-overview.v1" | "2026-05-27.admin-mcp-servers.v1" | "2026-05-27.admin-mcp-server-detail.v1" | "2026-05-27.admin-skills.v1" | "2026-06-20.admin-plugins-read.v1" | "2026-06-20.admin-plugins-write.v1" | "2026-06-03.admin-logs.v1" | "2026-06-03.admin-log-detail.v1" | "2026-05-16.admin-triggers.v1" | "2026-05-16.admin-trigger-detail.v1" | "2026-05-16.admin-event-detail.v1" | "2026-05-16.admin-external-agents.v1" | "2026-05-16.admin-external-agents-sync.v1" | "2026-06-09.admin-provider-usage-read.v1" | "2026-06-09.admin-provider-usage-write.v1" | "2026-06-09.admin-provider-usage-sync.v1" | "2026-05-16.admin-onboarding-read.v1" | "2026-05-16.admin-onboarding-write.v1" | "2026-05-16.admin-identity-read.v1" | "2026-05-16.admin-users-write.v1" | "2026-05-16.admin-deployment-tokens-read.v1" | "2026-05-16.admin-deployment-tokens-write.v1" | "2026-05-16.admin-policies-read.v1" | "2026-05-16.admin-policies-write.v1" | "2026-06-06.admin-prompt-transforms-read.v1" | "2026-06-06.admin-prompt-transforms-write.v1" | "2026-05-16.auth-session.v1" | "2026-05-16.auth-logout.v1" | "2026-05-16.auth-sso-authorize.v1" | "2026-05-16.auth-sso-callback.v1" | "2026-05-24.auth-google-callback.v1" | "2026-05-22.mobile-bootstrap.v1" | "2026-05-22.mobile-auth-start.v1" | "2026-05-22.mobile-auth-exchange.v1" | "2026-05-23.mobile-model-key.v1" | "2026-05-22.mobile-device-register.v1" | "2026-05-22.mobile-state.v1" | "2026-05-22.mobile-decision-resolve.v1" | "2026-05-16.organizations-read.v1" | "2026-05-16.organizations-write.v1" | "2026-05-16.organization-sso-providers.v1" | "2026-05-16.client-update-check.v1" | "2026-05-16.client-update-latest.v1" | "2026-05-16.client-release-publish.v1" | "2026-05-16.local-evaluate.v1" | "2026-05-22.local-hook-evaluate.v1";
+    functionName: "health" | "tenantEnroll" | "tenantEvaluate" | "tenantHookEvaluate" | "tenantDecisionPoll" | "tenantDecisionResolve" | "tenantTrayStatus" | "tenantSkillObservation" | "tenantPluginsRead" | "desktopEnroll" | "adminOverview" | "adminSecurity" | "adminMcpServers" | "adminMcpServerDetail" | "adminSkills" | "adminPluginsRead" | "adminPluginsWrite" | "adminLogs" | "adminLogDetail" | "adminTriggers" | "adminTriggerDetail" | "adminEventDetail" | "adminExternalAgents" | "adminExternalAgentsSync" | "adminProviderUsageRead" | "adminProviderUsageWrite" | "adminProviderUsageSync" | "adminOnboardingRead" | "adminOnboardingWrite" | "adminIdentityRead" | "adminUsersWrite" | "adminDeploymentTokensRead" | "adminDeploymentTokensWrite" | "adminPoliciesRead" | "adminPoliciesWrite" | "adminPromptTransformsRead" | "adminPromptTransformsWrite" | "authSession" | "authLogout" | "authSsoAuthorize" | "authSsoCallback" | "authGoogleCallback" | "mobileBootstrap" | "mobileAuthStart" | "mobileAuthExchange" | "mobileModelKey" | "mobileDeviceRegister" | "mobileState" | "mobileDecisionResolve" | "organizationsRead" | "organizationsWrite" | "organizationSsoProviders" | "clientUpdateCheck" | "clientUpdateLatest" | "clientReleasePublish" | "localEvaluate" | "localHookEvaluate";
+    version: "2026-05-16.health.v1" | "2026-05-16.tenant-enroll.v1" | "2026-05-16.tenant-evaluate.v1" | "2026-05-22.tenant-hook-evaluate.v1" | "2026-05-16.tenant-decision-poll.v1" | "2026-05-16.tenant-decision-resolve.v1" | "2026-05-16.tenant-tray-status.v1" | "2026-05-27.tenant-skill-observation.v1" | "2026-06-20.tenant-plugins-read.v1" | "2026-06-03.desktop-enroll.v1" | "2026-05-16.admin-overview.v1" | "2026-06-22.admin-security.v1" | "2026-05-27.admin-mcp-servers.v1" | "2026-05-27.admin-mcp-server-detail.v1" | "2026-05-27.admin-skills.v1" | "2026-06-20.admin-plugins-read.v1" | "2026-06-20.admin-plugins-write.v1" | "2026-06-03.admin-logs.v1" | "2026-06-03.admin-log-detail.v1" | "2026-05-16.admin-triggers.v1" | "2026-05-16.admin-trigger-detail.v1" | "2026-05-16.admin-event-detail.v1" | "2026-05-16.admin-external-agents.v1" | "2026-05-16.admin-external-agents-sync.v1" | "2026-06-09.admin-provider-usage-read.v1" | "2026-06-09.admin-provider-usage-write.v1" | "2026-06-09.admin-provider-usage-sync.v1" | "2026-05-16.admin-onboarding-read.v1" | "2026-05-16.admin-onboarding-write.v1" | "2026-05-16.admin-identity-read.v1" | "2026-05-16.admin-users-write.v1" | "2026-05-16.admin-deployment-tokens-read.v1" | "2026-05-16.admin-deployment-tokens-write.v1" | "2026-05-16.admin-policies-read.v1" | "2026-05-16.admin-policies-write.v1" | "2026-06-06.admin-prompt-transforms-read.v1" | "2026-06-06.admin-prompt-transforms-write.v1" | "2026-05-16.auth-session.v1" | "2026-05-16.auth-logout.v1" | "2026-05-16.auth-sso-authorize.v1" | "2026-05-16.auth-sso-callback.v1" | "2026-05-24.auth-google-callback.v1" | "2026-05-22.mobile-bootstrap.v1" | "2026-05-22.mobile-auth-start.v1" | "2026-05-22.mobile-auth-exchange.v1" | "2026-05-23.mobile-model-key.v1" | "2026-05-22.mobile-device-register.v1" | "2026-05-22.mobile-state.v1" | "2026-05-22.mobile-decision-resolve.v1" | "2026-05-16.organizations-read.v1" | "2026-05-16.organizations-write.v1" | "2026-05-16.organization-sso-providers.v1" | "2026-05-16.client-update-check.v1" | "2026-05-16.client-update-latest.v1" | "2026-05-16.client-release-publish.v1" | "2026-05-16.local-evaluate.v1" | "2026-05-22.local-hook-evaluate.v1";
 };
 export type OpenLeashEdition = "managed-cloud" | "managed-self-hosted";
 export type OpenLeashClientMode = "community" | "cloud" | "enterprise";
