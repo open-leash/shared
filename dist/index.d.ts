@@ -48,11 +48,12 @@ export type PluginMarketplaceListing = OpenLeashPluginManifest & {
     documentationUrl?: string;
     iconText: string;
     visualPng?: string;
-    installCount: number;
-    downloadCount: number;
-    weeklyDownloadCount: number;
-    trendPercent: number;
-    rating: number;
+    installCount?: number;
+    downloadCount?: number;
+    weeklyDownloadCount?: number;
+    trendPercent?: number;
+    rating?: number;
+    ratingCount?: number;
     featuredRank?: number | null;
     seoTitle: string;
     seoDescription: string;
@@ -449,494 +450,6 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     };
     tags: string[];
 })[];
-export declare const FIRST_PARTY_PLUGIN_MARKETPLACE: ({
-    shortDescription: string;
-    longDescription: string;
-    heroTagline: string;
-    iconText: string;
-    visualPng?: string | undefined;
-    installCount: number;
-    downloadCount: number;
-    weeklyDownloadCount: number;
-    trendPercent: number;
-    rating: number;
-    featuredRank?: number | null | undefined;
-    seoTitle: string;
-    seoDescription: string;
-    slug: string;
-    developerName: string;
-    developerUrl: string;
-    source: "first_party";
-    reviewStatus: "approved";
-    packageUrl: string;
-    repositoryUrl: string;
-    documentationUrl: string;
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    publisher: string;
-    runtime: "openleash-core";
-    entrypoint: string;
-    events: "prompt.beforeSubmit"[];
-    permissions: ("event:read" | "prompt:read" | "prompt:write" | "model:invoke" | "audit:write" | "usage:write")[];
-    effects: ("observe" | "transform")[];
-    ordering: {
-        priority: number;
-        before: string[];
-        after?: undefined;
-    };
-    configSchema: {
-        type: "object";
-        additionalProperties: false;
-        properties: {
-            enabled: {
-                type: string;
-            };
-            level: {
-                enum: string[];
-            };
-            conciseResponse: {
-                type: string;
-            };
-            model: {
-                type: string;
-            };
-            action?: undefined;
-            categories?: undefined;
-            policySet?: undefined;
-            protocol?: undefined;
-            endpointUrl?: undefined;
-            bearerToken?: undefined;
-            hecToken?: undefined;
-            source?: undefined;
-            sourcetype?: undefined;
-            index?: undefined;
-            minSeverity?: undefined;
-            includePrompt?: undefined;
-            includeToolArguments?: undefined;
-        };
-    };
-    defaultConfig: {
-        enabled: boolean;
-        level: string;
-        conciseResponse: boolean;
-        suspiciousRiskThreshold?: undefined;
-        action?: undefined;
-        categories?: undefined;
-        policySet?: undefined;
-        redactSecrets?: undefined;
-        protocol?: undefined;
-        endpointUrl?: undefined;
-        bearerToken?: undefined;
-        hecToken?: undefined;
-        source?: undefined;
-        sourcetype?: undefined;
-        index?: undefined;
-        minSeverity?: undefined;
-        includePrompt?: undefined;
-        includeToolArguments?: undefined;
-    };
-    tags: string[];
-} | {
-    shortDescription: string;
-    longDescription: string;
-    heroTagline: string;
-    iconText: string;
-    visualPng?: string | undefined;
-    installCount: number;
-    downloadCount: number;
-    weeklyDownloadCount: number;
-    trendPercent: number;
-    rating: number;
-    featuredRank?: number | null | undefined;
-    seoTitle: string;
-    seoDescription: string;
-    slug: string;
-    developerName: string;
-    developerUrl: string;
-    source: "first_party";
-    reviewStatus: "approved";
-    packageUrl: string;
-    repositoryUrl: string;
-    documentationUrl: string;
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    publisher: string;
-    runtime: "openleash-core";
-    entrypoint: string;
-    events: ("openleash.startup" | "agent.detected" | "skill.changed")[];
-    permissions: ("event:read" | "decision:write" | "model:invoke" | "filesystem:read" | "audit:write" | "log:write" | "signal:write" | "notification:send")[];
-    effects: ("observe" | "ask" | "inventory")[];
-    ordering: {
-        priority: number;
-        before?: undefined;
-        after?: undefined;
-    };
-    defaultConfig: {
-        enabled: boolean;
-        suspiciousRiskThreshold: number;
-        level?: undefined;
-        conciseResponse?: undefined;
-        action?: undefined;
-        categories?: undefined;
-        policySet?: undefined;
-        redactSecrets?: undefined;
-        protocol?: undefined;
-        endpointUrl?: undefined;
-        bearerToken?: undefined;
-        hecToken?: undefined;
-        source?: undefined;
-        sourcetype?: undefined;
-        index?: undefined;
-        minSeverity?: undefined;
-        includePrompt?: undefined;
-        includeToolArguments?: undefined;
-    };
-    tags: string[];
-    configSchema?: undefined;
-} | {
-    shortDescription: string;
-    longDescription: string;
-    heroTagline: string;
-    iconText: string;
-    visualPng?: string | undefined;
-    installCount: number;
-    downloadCount: number;
-    weeklyDownloadCount: number;
-    trendPercent: number;
-    rating: number;
-    featuredRank?: number | null | undefined;
-    seoTitle: string;
-    seoDescription: string;
-    slug: string;
-    developerName: string;
-    developerUrl: string;
-    source: "first_party";
-    reviewStatus: "approved";
-    packageUrl: string;
-    repositoryUrl: string;
-    documentationUrl: string;
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    publisher: string;
-    runtime: "openleash-core";
-    entrypoint: string;
-    events: "prompt.beforeSubmit"[];
-    permissions: ("event:read" | "prompt:read" | "prompt:write" | "decision:write" | "model:invoke" | "audit:write" | "signal:write")[];
-    effects: ("observe" | "transform" | "deny")[];
-    ordering: {
-        priority: number;
-        after: string[];
-        before?: undefined;
-    };
-    configSchema: {
-        type: "object";
-        additionalProperties: false;
-        properties: {
-            enabled: {
-                type: string;
-            };
-            action: {
-                enum: string[];
-            };
-            categories: {
-                type: string;
-                items: {
-                    enum: string[];
-                };
-            };
-            model: {
-                type: string;
-            };
-            level?: undefined;
-            conciseResponse?: undefined;
-            policySet?: undefined;
-            protocol?: undefined;
-            endpointUrl?: undefined;
-            bearerToken?: undefined;
-            hecToken?: undefined;
-            source?: undefined;
-            sourcetype?: undefined;
-            index?: undefined;
-            minSeverity?: undefined;
-            includePrompt?: undefined;
-            includeToolArguments?: undefined;
-        };
-    };
-    defaultConfig: {
-        enabled: boolean;
-        action: string;
-        categories: string[];
-        level?: undefined;
-        conciseResponse?: undefined;
-        suspiciousRiskThreshold?: undefined;
-        policySet?: undefined;
-        redactSecrets?: undefined;
-        protocol?: undefined;
-        endpointUrl?: undefined;
-        bearerToken?: undefined;
-        hecToken?: undefined;
-        source?: undefined;
-        sourcetype?: undefined;
-        index?: undefined;
-        minSeverity?: undefined;
-        includePrompt?: undefined;
-        includeToolArguments?: undefined;
-    };
-    tags: string[];
-} | {
-    shortDescription: string;
-    longDescription: string;
-    heroTagline: string;
-    iconText: string;
-    visualPng?: string | undefined;
-    installCount: number;
-    downloadCount: number;
-    weeklyDownloadCount: number;
-    trendPercent: number;
-    rating: number;
-    featuredRank?: number | null | undefined;
-    seoTitle: string;
-    seoDescription: string;
-    slug: string;
-    developerName: string;
-    developerUrl: string;
-    source: "first_party";
-    reviewStatus: "approved";
-    packageUrl: string;
-    repositoryUrl: string;
-    documentationUrl: string;
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    publisher: string;
-    runtime: "openleash-core";
-    entrypoint: string;
-    events: ("prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse")[];
-    permissions: ("event:read" | "prompt:read" | "tool:read" | "decision:write" | "model:invoke" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send")[];
-    effects: ("observe" | "ask" | "deny")[];
-    ordering: {
-        priority: number;
-        after: string[];
-        before?: undefined;
-    };
-    configSchema: {
-        type: "object";
-        additionalProperties: false;
-        properties: {
-            enabled: {
-                type: string;
-            };
-            policySet: {
-                type: string;
-            };
-            level?: undefined;
-            conciseResponse?: undefined;
-            model?: undefined;
-            action?: undefined;
-            categories?: undefined;
-            protocol?: undefined;
-            endpointUrl?: undefined;
-            bearerToken?: undefined;
-            hecToken?: undefined;
-            source?: undefined;
-            sourcetype?: undefined;
-            index?: undefined;
-            minSeverity?: undefined;
-            includePrompt?: undefined;
-            includeToolArguments?: undefined;
-        };
-    };
-    defaultConfig: {
-        enabled: boolean;
-        policySet: string;
-        level?: undefined;
-        conciseResponse?: undefined;
-        suspiciousRiskThreshold?: undefined;
-        action?: undefined;
-        categories?: undefined;
-        redactSecrets?: undefined;
-        protocol?: undefined;
-        endpointUrl?: undefined;
-        bearerToken?: undefined;
-        hecToken?: undefined;
-        source?: undefined;
-        sourcetype?: undefined;
-        index?: undefined;
-        minSeverity?: undefined;
-        includePrompt?: undefined;
-        includeToolArguments?: undefined;
-    };
-    tags: string[];
-} | {
-    shortDescription: string;
-    longDescription: string;
-    heroTagline: string;
-    iconText: string;
-    visualPng?: string | undefined;
-    installCount: number;
-    downloadCount: number;
-    weeklyDownloadCount: number;
-    trendPercent: number;
-    rating: number;
-    featuredRank?: number | null | undefined;
-    seoTitle: string;
-    seoDescription: string;
-    slug: string;
-    developerName: string;
-    developerUrl: string;
-    source: "first_party";
-    reviewStatus: "approved";
-    packageUrl: string;
-    repositoryUrl: string;
-    documentationUrl: string;
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    publisher: string;
-    runtime: "openleash-core";
-    entrypoint: string;
-    events: ("tool.beforeUse" | "tool.afterUse")[];
-    permissions: ("event:read" | "tool:read" | "audit:write" | "signal:write")[];
-    effects: ("observe" | "inventory")[];
-    ordering: {
-        priority: number;
-        after: string[];
-        before?: undefined;
-    };
-    defaultConfig: {
-        enabled: boolean;
-        redactSecrets: boolean;
-        level?: undefined;
-        conciseResponse?: undefined;
-        suspiciousRiskThreshold?: undefined;
-        action?: undefined;
-        categories?: undefined;
-        policySet?: undefined;
-        protocol?: undefined;
-        endpointUrl?: undefined;
-        bearerToken?: undefined;
-        hecToken?: undefined;
-        source?: undefined;
-        sourcetype?: undefined;
-        index?: undefined;
-        minSeverity?: undefined;
-        includePrompt?: undefined;
-        includeToolArguments?: undefined;
-    };
-    tags: string[];
-    configSchema?: undefined;
-} | {
-    shortDescription: string;
-    longDescription: string;
-    heroTagline: string;
-    iconText: string;
-    visualPng?: string | undefined;
-    installCount: number;
-    downloadCount: number;
-    weeklyDownloadCount: number;
-    trendPercent: number;
-    rating: number;
-    featuredRank?: number | null | undefined;
-    seoTitle: string;
-    seoDescription: string;
-    slug: string;
-    developerName: string;
-    developerUrl: string;
-    source: "first_party";
-    reviewStatus: "approved";
-    packageUrl: string;
-    repositoryUrl: string;
-    documentationUrl: string;
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    publisher: string;
-    runtime: "openleash-core";
-    entrypoint: string;
-    events: ("skill.changed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended")[];
-    permissions: ("event:read" | "prompt:read" | "tool:read" | "network:access" | "audit:write" | "log:write")[];
-    effects: ("observe" | "notify")[];
-    ordering: {
-        priority: number;
-        after: string[];
-        before?: undefined;
-    };
-    configSchema: {
-        type: "object";
-        additionalProperties: false;
-        properties: {
-            enabled: {
-                type: string;
-            };
-            protocol: {
-                enum: string[];
-            };
-            endpointUrl: {
-                type: string;
-            };
-            bearerToken: {
-                type: string;
-            };
-            hecToken: {
-                type: string;
-            };
-            source: {
-                type: string;
-            };
-            sourcetype: {
-                type: string;
-            };
-            index: {
-                type: string;
-            };
-            minSeverity: {
-                enum: string[];
-            };
-            includePrompt: {
-                type: string;
-            };
-            includeToolArguments: {
-                type: string;
-            };
-            level?: undefined;
-            conciseResponse?: undefined;
-            model?: undefined;
-            action?: undefined;
-            categories?: undefined;
-            policySet?: undefined;
-        };
-    };
-    defaultConfig: {
-        enabled: boolean;
-        protocol: string;
-        endpointUrl: string;
-        bearerToken: string;
-        hecToken: string;
-        source: string;
-        sourcetype: string;
-        index: string;
-        minSeverity: string;
-        includePrompt: boolean;
-        includeToolArguments: boolean;
-        level?: undefined;
-        conciseResponse?: undefined;
-        suspiciousRiskThreshold?: undefined;
-        action?: undefined;
-        categories?: undefined;
-        policySet?: undefined;
-        redactSecrets?: undefined;
-    };
-    tags: string[];
-})[];
 export type PluginRunStatus = "skipped" | "passed" | "modified" | "blocked" | "needs_question" | "failed";
 export type PluginFinding = {
     title: string;
@@ -1105,6 +618,58 @@ export type PluginSignalRecord = PluginSignalRequest & {
     sessionId?: string;
     projectPath?: string;
     createdAt: string;
+};
+export type OpenLeashOutcomeDomain = "security" | "data_protection" | "tool_risk" | "identity" | "cost" | "productivity" | "compliance" | "operations";
+export type OpenLeashOutcomeStatus = "observed" | "passed" | "modified" | "masked" | "blocked" | "needs_review" | "failed";
+export type OpenLeashOutcomeDecision = "allow" | "ask" | "deny" | "blocked" | "approved" | "rejected" | "observed";
+export type OpenLeashOutcomeEvidence = {
+    label: string;
+    value?: string;
+    kind?: "text" | "code" | "path" | "url" | "json";
+    sensitive?: boolean;
+};
+export type OpenLeashOutcomeRecord = {
+    id: string;
+    domain: OpenLeashOutcomeDomain;
+    title: string;
+    summary?: string | null;
+    severity: PluginSignalSeverity;
+    status: OpenLeashOutcomeStatus;
+    decision?: OpenLeashOutcomeDecision | null;
+    occurredAt: string;
+    createdAt: string;
+    source: {
+        pluginId: string;
+        label: string;
+        kind: PluginSignalKind | PluginUsageKind | "plugin.run" | "plugin.log";
+    };
+    subject?: {
+        type?: string;
+        name?: string;
+        id?: string;
+    };
+    actor?: {
+        userId?: string | null;
+        name?: string | null;
+        email?: string | null;
+    };
+    agent?: {
+        kind?: string | null;
+        name?: string | null;
+        hostname?: string | null;
+    };
+    context?: {
+        organizationId?: string;
+        organizationSlug?: string;
+        conversationEventId?: string | null;
+        evaluationId?: string | null;
+        eventName?: string | null;
+        toolName?: string | null;
+        projectPath?: string | null;
+        correlationKeys?: string[];
+    };
+    evidence?: OpenLeashOutcomeEvidence[];
+    details?: Record<string, unknown>;
 };
 export type PluginUsageKind = "llm.tokens" | "plugin.compute" | "plugin.operation" | "network.egress" | "storage.bytes";
 export type PluginUsageRecordRequest = {
@@ -1375,6 +940,7 @@ export declare const OPENLEASH_API_CONTRACTS: {
     readonly desktopEnroll: "2026-06-03.desktop-enroll.v1";
     readonly adminOverview: "2026-05-16.admin-overview.v1";
     readonly adminSecurity: "2026-06-22.admin-security.v1";
+    readonly adminOutcomes: "2026-06-24.admin-outcomes.v1";
     readonly adminMcpServers: "2026-05-27.admin-mcp-servers.v1";
     readonly adminMcpServerDetail: "2026-05-27.admin-mcp-server-detail.v1";
     readonly adminSkills: "2026-05-27.admin-skills.v1";
@@ -1401,6 +967,7 @@ export declare const OPENLEASH_API_CONTRACTS: {
     readonly adminPromptTransformsRead: "2026-06-06.admin-prompt-transforms-read.v1";
     readonly adminPromptTransformsWrite: "2026-06-06.admin-prompt-transforms-write.v1";
     readonly authSession: "2026-05-16.auth-session.v1";
+    readonly authAccountOutcomes: "2026-06-24.auth-account-outcomes.v1";
     readonly authLogout: "2026-05-16.auth-logout.v1";
     readonly authSsoAuthorize: "2026-05-16.auth-sso-authorize.v1";
     readonly authSsoCallback: "2026-05-16.auth-sso-callback.v1";
@@ -1424,8 +991,8 @@ export declare const OPENLEASH_API_CONTRACTS: {
 export type OpenLeashApiFunction = keyof typeof OPENLEASH_API_CONTRACTS;
 export declare function apiVersionHeaders(functionName: OpenLeashApiFunction): Record<string, string>;
 export declare function apiContractFor(functionName: OpenLeashApiFunction): {
-    functionName: "health" | "tenantEnroll" | "tenantEvaluate" | "tenantHookEvaluate" | "tenantDecisionPoll" | "tenantDecisionResolve" | "tenantTrayStatus" | "tenantSkillObservation" | "tenantPluginsRead" | "desktopEnroll" | "adminOverview" | "adminSecurity" | "adminMcpServers" | "adminMcpServerDetail" | "adminSkills" | "adminPluginsRead" | "adminPluginsWrite" | "adminLogs" | "adminLogDetail" | "adminTriggers" | "adminTriggerDetail" | "adminEventDetail" | "adminExternalAgents" | "adminExternalAgentsSync" | "adminProviderUsageRead" | "adminProviderUsageWrite" | "adminProviderUsageSync" | "adminOnboardingRead" | "adminOnboardingWrite" | "adminIdentityRead" | "adminUsersWrite" | "adminDeploymentTokensRead" | "adminDeploymentTokensWrite" | "adminPoliciesRead" | "adminPoliciesWrite" | "adminPromptTransformsRead" | "adminPromptTransformsWrite" | "authSession" | "authLogout" | "authSsoAuthorize" | "authSsoCallback" | "authGoogleCallback" | "mobileBootstrap" | "mobileAuthStart" | "mobileAuthExchange" | "mobileModelKey" | "mobileDeviceRegister" | "mobileState" | "mobileDecisionResolve" | "organizationsRead" | "organizationsWrite" | "organizationSsoProviders" | "clientUpdateCheck" | "clientUpdateLatest" | "clientReleasePublish" | "localEvaluate" | "localHookEvaluate";
-    version: "2026-05-16.health.v1" | "2026-05-16.tenant-enroll.v1" | "2026-05-16.tenant-evaluate.v1" | "2026-05-22.tenant-hook-evaluate.v1" | "2026-05-16.tenant-decision-poll.v1" | "2026-05-16.tenant-decision-resolve.v1" | "2026-05-16.tenant-tray-status.v1" | "2026-05-27.tenant-skill-observation.v1" | "2026-06-20.tenant-plugins-read.v1" | "2026-06-03.desktop-enroll.v1" | "2026-05-16.admin-overview.v1" | "2026-06-22.admin-security.v1" | "2026-05-27.admin-mcp-servers.v1" | "2026-05-27.admin-mcp-server-detail.v1" | "2026-05-27.admin-skills.v1" | "2026-06-20.admin-plugins-read.v1" | "2026-06-20.admin-plugins-write.v1" | "2026-06-03.admin-logs.v1" | "2026-06-03.admin-log-detail.v1" | "2026-05-16.admin-triggers.v1" | "2026-05-16.admin-trigger-detail.v1" | "2026-05-16.admin-event-detail.v1" | "2026-05-16.admin-external-agents.v1" | "2026-05-16.admin-external-agents-sync.v1" | "2026-06-09.admin-provider-usage-read.v1" | "2026-06-09.admin-provider-usage-write.v1" | "2026-06-09.admin-provider-usage-sync.v1" | "2026-05-16.admin-onboarding-read.v1" | "2026-05-16.admin-onboarding-write.v1" | "2026-05-16.admin-identity-read.v1" | "2026-05-16.admin-users-write.v1" | "2026-05-16.admin-deployment-tokens-read.v1" | "2026-05-16.admin-deployment-tokens-write.v1" | "2026-05-16.admin-policies-read.v1" | "2026-05-16.admin-policies-write.v1" | "2026-06-06.admin-prompt-transforms-read.v1" | "2026-06-06.admin-prompt-transforms-write.v1" | "2026-05-16.auth-session.v1" | "2026-05-16.auth-logout.v1" | "2026-05-16.auth-sso-authorize.v1" | "2026-05-16.auth-sso-callback.v1" | "2026-05-24.auth-google-callback.v1" | "2026-05-22.mobile-bootstrap.v1" | "2026-05-22.mobile-auth-start.v1" | "2026-05-22.mobile-auth-exchange.v1" | "2026-05-23.mobile-model-key.v1" | "2026-05-22.mobile-device-register.v1" | "2026-05-22.mobile-state.v1" | "2026-05-22.mobile-decision-resolve.v1" | "2026-05-16.organizations-read.v1" | "2026-05-16.organizations-write.v1" | "2026-05-16.organization-sso-providers.v1" | "2026-05-16.client-update-check.v1" | "2026-05-16.client-update-latest.v1" | "2026-05-16.client-release-publish.v1" | "2026-05-16.local-evaluate.v1" | "2026-05-22.local-hook-evaluate.v1";
+    functionName: "health" | "tenantEnroll" | "tenantEvaluate" | "tenantHookEvaluate" | "tenantDecisionPoll" | "tenantDecisionResolve" | "tenantTrayStatus" | "tenantSkillObservation" | "tenantPluginsRead" | "desktopEnroll" | "adminOverview" | "adminSecurity" | "adminOutcomes" | "adminMcpServers" | "adminMcpServerDetail" | "adminSkills" | "adminPluginsRead" | "adminPluginsWrite" | "adminLogs" | "adminLogDetail" | "adminTriggers" | "adminTriggerDetail" | "adminEventDetail" | "adminExternalAgents" | "adminExternalAgentsSync" | "adminProviderUsageRead" | "adminProviderUsageWrite" | "adminProviderUsageSync" | "adminOnboardingRead" | "adminOnboardingWrite" | "adminIdentityRead" | "adminUsersWrite" | "adminDeploymentTokensRead" | "adminDeploymentTokensWrite" | "adminPoliciesRead" | "adminPoliciesWrite" | "adminPromptTransformsRead" | "adminPromptTransformsWrite" | "authSession" | "authAccountOutcomes" | "authLogout" | "authSsoAuthorize" | "authSsoCallback" | "authGoogleCallback" | "mobileBootstrap" | "mobileAuthStart" | "mobileAuthExchange" | "mobileModelKey" | "mobileDeviceRegister" | "mobileState" | "mobileDecisionResolve" | "organizationsRead" | "organizationsWrite" | "organizationSsoProviders" | "clientUpdateCheck" | "clientUpdateLatest" | "clientReleasePublish" | "localEvaluate" | "localHookEvaluate";
+    version: "2026-05-16.health.v1" | "2026-05-16.tenant-enroll.v1" | "2026-05-16.tenant-evaluate.v1" | "2026-05-22.tenant-hook-evaluate.v1" | "2026-05-16.tenant-decision-poll.v1" | "2026-05-16.tenant-decision-resolve.v1" | "2026-05-16.tenant-tray-status.v1" | "2026-05-27.tenant-skill-observation.v1" | "2026-06-20.tenant-plugins-read.v1" | "2026-06-03.desktop-enroll.v1" | "2026-05-16.admin-overview.v1" | "2026-06-22.admin-security.v1" | "2026-06-24.admin-outcomes.v1" | "2026-05-27.admin-mcp-servers.v1" | "2026-05-27.admin-mcp-server-detail.v1" | "2026-05-27.admin-skills.v1" | "2026-06-20.admin-plugins-read.v1" | "2026-06-20.admin-plugins-write.v1" | "2026-06-03.admin-logs.v1" | "2026-06-03.admin-log-detail.v1" | "2026-05-16.admin-triggers.v1" | "2026-05-16.admin-trigger-detail.v1" | "2026-05-16.admin-event-detail.v1" | "2026-05-16.admin-external-agents.v1" | "2026-05-16.admin-external-agents-sync.v1" | "2026-06-09.admin-provider-usage-read.v1" | "2026-06-09.admin-provider-usage-write.v1" | "2026-06-09.admin-provider-usage-sync.v1" | "2026-05-16.admin-onboarding-read.v1" | "2026-05-16.admin-onboarding-write.v1" | "2026-05-16.admin-identity-read.v1" | "2026-05-16.admin-users-write.v1" | "2026-05-16.admin-deployment-tokens-read.v1" | "2026-05-16.admin-deployment-tokens-write.v1" | "2026-05-16.admin-policies-read.v1" | "2026-05-16.admin-policies-write.v1" | "2026-06-06.admin-prompt-transforms-read.v1" | "2026-06-06.admin-prompt-transforms-write.v1" | "2026-05-16.auth-session.v1" | "2026-06-24.auth-account-outcomes.v1" | "2026-05-16.auth-logout.v1" | "2026-05-16.auth-sso-authorize.v1" | "2026-05-16.auth-sso-callback.v1" | "2026-05-24.auth-google-callback.v1" | "2026-05-22.mobile-bootstrap.v1" | "2026-05-22.mobile-auth-start.v1" | "2026-05-22.mobile-auth-exchange.v1" | "2026-05-23.mobile-model-key.v1" | "2026-05-22.mobile-device-register.v1" | "2026-05-22.mobile-state.v1" | "2026-05-22.mobile-decision-resolve.v1" | "2026-05-16.organizations-read.v1" | "2026-05-16.organizations-write.v1" | "2026-05-16.organization-sso-providers.v1" | "2026-05-16.client-update-check.v1" | "2026-05-16.client-update-latest.v1" | "2026-05-16.client-release-publish.v1" | "2026-05-16.local-evaluate.v1" | "2026-05-22.local-hook-evaluate.v1";
 };
 export type OpenLeashEdition = "managed-cloud" | "managed-self-hosted";
 export type OpenLeashClientMode = "community" | "cloud" | "enterprise";
