@@ -74,6 +74,7 @@ export type PluginCatalogItem = OpenLeashPluginManifest & {
         mandatory: boolean;
         defaultEnabled: boolean;
         userInstallAllowed: boolean;
+        configLocked?: boolean;
     };
 };
 export type PluginSettingState = {
@@ -671,6 +672,63 @@ export type OpenLeashOutcomeRecord = {
     evidence?: OpenLeashOutcomeEvidence[];
     details?: Record<string, unknown>;
 };
+export type OpenLeashPluginCategoryId = "cost" | "security" | "observability" | "utility";
+export type OpenLeashPluginCategoryMeta = {
+    id: OpenLeashPluginCategoryId;
+    label: string;
+    color: string;
+    icon: "trend" | "shield" | "eye" | "bolt";
+};
+export declare const OPENLEASH_PLUGIN_CATEGORIES: OpenLeashPluginCategoryMeta[];
+export type OpenLeashClientPluginView = {
+    id: string;
+    packageId: string;
+    displayName: string;
+    description?: string;
+    category: OpenLeashPluginCategoryId;
+    installed: boolean;
+    author?: string;
+    iconText?: string;
+    downloadCount?: number;
+    configSchema?: PluginSettingSchema;
+    defaultConfig?: Record<string, unknown>;
+    settings?: PluginSettingState;
+    organizationPolicy?: PluginCatalogItem["organizationPolicy"];
+    outcomeCount: number;
+    latestOutcome?: OpenLeashOutcomeRecord;
+};
+export type OpenLeashClientPluginCategory = OpenLeashPluginCategoryMeta & {
+    count: number;
+    plugins: OpenLeashClientPluginView[];
+};
+export type OpenLeashClientViewModel = {
+    version: "2026-06-26.client-view-model.v1";
+    generatedAt: string;
+    shellSections: Array<"overview" | "agents" | "activity" | "approvals" | "policies" | "settings" | "identity">;
+    pluginCategories: OpenLeashClientPluginCategory[];
+    outcomes: OpenLeashOutcomeRecord[];
+    summary?: {
+        total?: number;
+        totalOutcomes: number;
+        highSeverity: number;
+        blocked: number;
+        needsReview: number;
+        byDomain: Record<string, number>;
+    };
+};
+export declare function pluginPackageId(plugin: Pick<PluginCatalogItem, "id" | "slug" | "name" | "marketplace">): string;
+export declare function pluginCategoryId(plugin: Pick<PluginCatalogItem, "id" | "name" | "description" | "tags" | "marketplace"> & {
+    category?: unknown;
+    manifest?: {
+        category?: unknown;
+    };
+}): OpenLeashPluginCategoryId;
+export declare function buildOpenLeashClientViewModel({ plugins, outcomes, summary, shellSections }: {
+    plugins: PluginCatalogItem[];
+    outcomes: OpenLeashOutcomeRecord[];
+    summary?: Partial<OpenLeashClientViewModel["summary"]>;
+    shellSections?: OpenLeashClientViewModel["shellSections"];
+}): OpenLeashClientViewModel;
 export type PluginUsageKind = "llm.tokens" | "plugin.compute" | "plugin.operation" | "network.egress" | "storage.bytes";
 export type PluginUsageRecordRequest = {
     kind: PluginUsageKind;

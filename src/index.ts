@@ -152,6 +152,7 @@ export type PluginCatalogItem = OpenLeashPluginManifest & {
     mandatory: boolean;
     defaultEnabled: boolean;
     userInstallAllowed: boolean;
+    configLocked?: boolean;
   };
 };
 
@@ -618,6 +619,147 @@ export type OpenLeashOutcomeRecord = {
   evidence?: OpenLeashOutcomeEvidence[];
   details?: Record<string, unknown>;
 };
+
+export type OpenLeashPluginCategoryId = "cost" | "security" | "observability" | "utility";
+
+export type OpenLeashPluginCategoryMeta = {
+  id: OpenLeashPluginCategoryId;
+  label: string;
+  color: string;
+  icon: "trend" | "shield" | "eye" | "bolt";
+};
+
+export const OPENLEASH_PLUGIN_CATEGORIES: OpenLeashPluginCategoryMeta[] = [
+  { id: "cost", label: "Cost", color: "#5b47e0", icon: "trend" },
+  { id: "security", label: "Security", color: "#0b7968", icon: "shield" },
+  { id: "observability", label: "Observability", color: "#2a63d8", icon: "eye" },
+  { id: "utility", label: "Utility", color: "#a15b12", icon: "bolt" }
+];
+
+export type OpenLeashClientPluginView = {
+  id: string;
+  packageId: string;
+  displayName: string;
+  description?: string;
+  category: OpenLeashPluginCategoryId;
+  installed: boolean;
+  author?: string;
+  iconText?: string;
+  downloadCount?: number;
+  configSchema?: PluginSettingSchema;
+  defaultConfig?: Record<string, unknown>;
+  settings?: PluginSettingState;
+  organizationPolicy?: PluginCatalogItem["organizationPolicy"];
+  outcomeCount: number;
+  latestOutcome?: OpenLeashOutcomeRecord;
+};
+
+export type OpenLeashClientPluginCategory = OpenLeashPluginCategoryMeta & {
+  count: number;
+  plugins: OpenLeashClientPluginView[];
+};
+
+export type OpenLeashClientViewModel = {
+  version: "2026-06-26.client-view-model.v1";
+  generatedAt: string;
+  shellSections: Array<"overview" | "agents" | "activity" | "approvals" | "policies" | "settings" | "identity">;
+  pluginCategories: OpenLeashClientPluginCategory[];
+  outcomes: OpenLeashOutcomeRecord[];
+  summary?: {
+    total?: number;
+    totalOutcomes: number;
+    highSeverity: number;
+    blocked: number;
+    needsReview: number;
+    byDomain: Record<string, number>;
+  };
+};
+
+export function pluginPackageId(plugin: Pick<PluginCatalogItem, "id" | "slug" | "name" | "marketplace">) {
+  return plugin.slug || plugin.marketplace?.slug || String(plugin.id || "").split(".").pop() || plugin.name || plugin.id;
+}
+
+export function pluginCategoryId(plugin: Pick<PluginCatalogItem, "id" | "name" | "description" | "tags" | "marketplace"> & { category?: unknown; manifest?: { category?: unknown } }): OpenLeashPluginCategoryId {
+  const raw = (plugin.marketplace as { category?: unknown } | undefined)?.category || plugin.category || plugin.manifest?.category || "";
+  const text = String(raw || `${plugin.id || ""} ${plugin.name || ""} ${plugin.description || ""} ${(plugin.marketplace?.tags || []).join(" ")} ${(plugin.tags || []).join(" ")}`).toLowerCase();
+  if (/cost|token|prompt|compression|usage|budget|spend/.test(text)) return "cost";
+  if (/security|policy|guard|skill|prompt-injection|risk|approval|dlp|leak|sensitive|secret|credential/.test(text)) return "security";
+  if (/observability|observe|log|mcp|siem|audit|telemetry|monitor/.test(text)) return "observability";
+  return "utility";
+}
+
+export function buildOpenLeashClientViewModel({
+  plugins,
+  outcomes,
+  summary,
+  shellSections = ["overview", "agents", "activity", "approvals", "policies", "settings"]
+}: {
+  plugins: PluginCatalogItem[];
+  outcomes: OpenLeashOutcomeRecord[];
+  summary?: Partial<OpenLeashClientViewModel["summary"]>;
+  shellSections?: OpenLeashClientViewModel["shellSections"];
+}): OpenLeashClientViewModel {
+  const outcomesByPlugin = new Map<string, OpenLeashOutcomeRecord[]>();
+  for (const outcome of outcomes) {
+    const pluginId = outcome.source?.pluginId || "openleash";
+    const list = outcomesByPlugin.get(pluginId) || [];
+    list.push(outcome);
+    outcomesByPlugin.set(pluginId, list);
+  }
+  const installed = plugins
+    .filter((plugin) => plugin.settings?.enabled === true)
+    .map((plugin): OpenLeashClientPluginView => {
+      const pluginOutcomes = outcomesByPlugin.get(plugin.id) || [];
+      return {
+        id: plugin.id,
+        packageId: pluginPackageId(plugin),
+        displayName: plugin.name || pluginPackageId(plugin),
+        description: plugin.marketplace?.shortDescription || plugin.description,
+        category: pluginCategoryId(plugin),
+        installed: true,
+        author: plugin.marketplace?.developerName || plugin.publisher,
+        iconText: plugin.marketplace?.iconText,
+        downloadCount: plugin.marketplace?.downloadCount,
+        configSchema: plugin.configSchema,
+        defaultConfig: plugin.defaultConfig,
+        settings: plugin.settings,
+        organizationPolicy: plugin.organizationPolicy,
+        outcomeCount: pluginOutcomes.length,
+        latestOutcome: pluginOutcomes[0]
+      };
+    });
+  return {
+    version: "2026-06-26.client-view-model.v1",
+    generatedAt: new Date().toISOString(),
+    shellSections,
+    pluginCategories: OPENLEASH_PLUGIN_CATEGORIES.map((category) => {
+      const categoryPlugins = installed.filter((plugin) => plugin.category === category.id);
+      return { ...category, count: categoryPlugins.length, plugins: categoryPlugins };
+    }),
+    outcomes,
+    summary: clientViewSummary(outcomes, summary)
+  };
+}
+
+function clientViewSummary(outcomes: OpenLeashOutcomeRecord[], summary?: Partial<OpenLeashClientViewModel["summary"]>): NonNullable<OpenLeashClientViewModel["summary"]> {
+  const fallback = {
+    totalOutcomes: outcomes.length,
+    highSeverity: outcomes.filter((item) => item.severity === "high" || item.severity === "critical").length,
+    blocked: outcomes.filter((item) => item.status === "blocked" || item.decision === "blocked" || item.decision === "deny").length,
+    needsReview: outcomes.filter((item) => item.status === "needs_review" || item.decision === "ask").length,
+    byDomain: outcomes.reduce<Record<string, number>>((acc, item) => {
+      acc[item.domain] = (acc[item.domain] ?? 0) + 1;
+      return acc;
+    }, {})
+  };
+  return {
+    totalOutcomes: summary?.totalOutcomes ?? summary?.total ?? fallback.totalOutcomes,
+    highSeverity: summary?.highSeverity ?? fallback.highSeverity,
+    blocked: summary?.blocked ?? fallback.blocked,
+    needsReview: summary?.needsReview ?? fallback.needsReview,
+    byDomain: summary?.byDomain ?? fallback.byDomain
+  };
+}
 
 export type PluginUsageKind = "llm.tokens" | "plugin.compute" | "plugin.operation" | "network.egress" | "storage.bytes";
 
