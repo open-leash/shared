@@ -54,6 +54,7 @@ export type PluginPermission =
   | "decision:write"
   | "model:invoke"
   | "network:access"
+  | "instructions:read"
   | "filesystem:read"
   | "filesystem:write"
   | "storage:read"
@@ -247,14 +248,14 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     tags: ["security", "privacy", "prompt"]
   },
   {
-    id: "openleash.security-evaluator",
-    slug: "sec-evaluator",
-    name: "sec-evaluator",
-    description: "Approve, deny, or log risky agent actions.",
+    id: "openleash.rules-enforcer",
+    slug: "rules-enforcer",
+    name: "rules-enforcer",
+    description: "Watch agent conversations and pause when configured rules are violated.",
     version: "1.0.0",
     publisher: "openleash",
     runtime: "openleash-core",
-    entrypoint: "plugins/security-evaluator",
+    entrypoint: "plugins/rules-enforcer",
     events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse"],
     permissions: ["event:read", "prompt:read", "tool:read", "decision:write", "model:invoke", "audit:write", "log:write", "signal:write", "usage:write", "notification:send"],
     effects: ["observe", "ask", "deny"],
@@ -264,14 +265,24 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
       additionalProperties: false,
       properties: {
         enabled: { type: "boolean" },
-        policySet: { type: "string" }
+        rules: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              text: { type: "string" },
+              action: { type: "string", enum: ["ask", "block"] }
+            }
+          }
+        }
       }
     },
     defaultConfig: {
       enabled: true,
-      policySet: "active"
+      rules: []
     },
-    tags: ["security", "policy", "approval"]
+    tags: ["security", "rules", "policy", "approval"]
   },
   {
     id: "openleash.mcp-scanner",
@@ -285,7 +296,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     events: ["tool.beforeUse", "tool.afterUse"],
     permissions: ["event:read", "tool:read", "audit:write", "signal:write"],
     effects: ["observe", "inventory"],
-    ordering: { priority: 400, after: ["openleash.security-evaluator"] },
+    ordering: { priority: 400, after: ["openleash.rules-enforcer"] },
     defaultConfig: {
       enabled: true,
       redactSecrets: true
@@ -304,7 +315,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse", "session.started", "session.ended", "skill.changed", "log.emitted"],
     permissions: ["event:read", "prompt:read", "tool:read", "network:access", "audit:write", "log:write"],
     effects: ["observe", "notify"],
-    ordering: { priority: 900, after: ["openleash.security-evaluator", "openleash.mcp-scanner"] },
+    ordering: { priority: 900, after: ["openleash.rules-enforcer", "openleash.mcp-scanner"] },
     configSchema: {
       type: "object",
       additionalProperties: false,
@@ -682,9 +693,9 @@ export function pluginPackageId(plugin: Pick<PluginCatalogItem, "id" | "slug" | 
 export function pluginCategoryId(plugin: Pick<PluginCatalogItem, "id" | "name" | "description" | "tags" | "marketplace"> & { category?: unknown; manifest?: { category?: unknown } }): OpenLeashPluginCategoryId {
   const raw = (plugin.marketplace as { category?: unknown } | undefined)?.category || plugin.category || plugin.manifest?.category || "";
   const text = String(raw || `${plugin.id || ""} ${plugin.name || ""} ${plugin.description || ""} ${(plugin.marketplace?.tags || []).join(" ")} ${(plugin.tags || []).join(" ")}`).toLowerCase();
-  if (/cost|token|prompt|compression|usage|budget|spend/.test(text)) return "cost";
   if (/security|policy|guard|skill|prompt-injection|risk|approval|dlp|leak|sensitive|secret|credential/.test(text)) return "security";
   if (/observability|observe|log|mcp|siem|audit|telemetry|monitor/.test(text)) return "observability";
+  if (/cost|token|compression|usage|budget|spend/.test(text)) return "cost";
   return "utility";
 }
 
@@ -791,7 +802,26 @@ export type PluginUsageRecord = PluginUsageRecordRequest & {
   createdAt: string;
 };
 
+export type PluginInstructionFile = {
+  agent: string;
+  scope: "global" | "project";
+  label?: string;
+  path?: string;
+  content: string;
+  parsedLines?: string[];
+};
+
+export type PluginInstructionListRequest = {
+  agent?: string;
+  scope?: "global" | "project";
+};
+
 export type PluginCapabilities = {
+  context: {
+    instructions: {
+      list(request?: PluginInstructionListRequest): Promise<PluginInstructionFile[]>;
+    };
+  };
   prompt: {
     compress(request: PluginPromptCompressionRequest): Promise<PluginPromptCompressionResult>;
   };
@@ -860,6 +890,7 @@ export type Policy = {
   naturalLanguageRule: string;
   enabled: boolean;
   locked?: boolean;
+  enforcementAction?: "ask" | "block";
 };
 
 export type PolicyDecision = {
@@ -1026,6 +1057,7 @@ export type MobileDecisionResolveResponse = {
 export type HookAgentSlug =
   | "claude"
   | "codex"
+  | "copilot"
   | "cursor"
   | "gemini"
   | "opencode"
@@ -1035,6 +1067,7 @@ export type HookAgentSlug =
 export const HOOK_AGENT_METADATA: Record<HookAgentSlug, { kind: AgentKind; displayName: string }> = {
   claude: { kind: "claude-code", displayName: "Claude Code" },
   codex: { kind: "codex", displayName: "OpenAI Codex" },
+  copilot: { kind: "github-copilot", displayName: "GitHub Copilot" },
   cursor: { kind: "cursor", displayName: "Cursor" },
   gemini: { kind: "gemini", displayName: "Google Gemini CLI" },
   opencode: { kind: "opencode", displayName: "OpenCode" },
@@ -1107,6 +1140,8 @@ export const OPENLEASH_API_CONTRACTS = {
   mobileDeviceRegister: "2026-05-22.mobile-device-register.v1",
   mobileState: "2026-05-22.mobile-state.v1",
   mobileDecisionResolve: "2026-05-22.mobile-decision-resolve.v1",
+  clientNotifications: "2026-06-28.client-notifications.v1",
+  clientDecisionResolve: "2026-06-28.client-decision-resolve.v1",
   organizationsRead: "2026-05-16.organizations-read.v1",
   organizationsWrite: "2026-05-16.organizations-write.v1",
   organizationSsoProviders: "2026-05-16.organization-sso-providers.v1",
