@@ -95,6 +95,7 @@ export type OpenLeashPluginManifest = {
   slug?: string;
   name: string;
   description: string;
+  repositoryUrl?: string;
   version: string;
   publisher: "openleash" | string;
   runtime: PluginRuntime;
@@ -170,6 +171,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     slug: "token-saver",
     name: "token-saver",
     description: "Trim noisy context before every model call.",
+    repositoryUrl: "https://github.com/open-leash/plugin-token-saver",
     version: "1.0.0",
     publisher: "openleash",
     runtime: "openleash-core",
@@ -200,6 +202,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     slug: "skill-scanner",
     name: "skill-scanner",
     description: "Catch suspicious instructions before they spread.",
+    repositoryUrl: "https://github.com/open-leash/plugin-skill-scanner",
     version: "1.0.0",
     publisher: "openleash",
     runtime: "openleash-core",
@@ -219,6 +222,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     slug: "data-leakage-prevention",
     name: "data-leakage-prevention",
     description: "Mask secrets before agents send them.",
+    repositoryUrl: "https://github.com/open-leash/plugin-data-leakage-prevention",
     version: "1.0.0",
     publisher: "openleash",
     runtime: "openleash-core",
@@ -248,10 +252,75 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     tags: ["security", "privacy", "prompt"]
   },
   {
+    id: "openleash.sensitive-access",
+    slug: "sensitive-access",
+    name: "sensitive-access",
+    description: "Catch agents reading secrets, printing env vars, or touching credential files.",
+    repositoryUrl: "https://github.com/open-leash/plugin-sensitive-access",
+    version: "1.0.0",
+    publisher: "openleash",
+    runtime: "openleash-core",
+    entrypoint: "plugins/sensitive-access",
+    events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse"],
+    permissions: ["event:read", "prompt:read", "tool:read", "model:invoke", "decision:write", "audit:write", "log:write", "signal:write"],
+    effects: ["observe", "ask", "deny"],
+    ordering: { priority: 180, before: ["openleash.dlp", "openleash.blast-radius", "openleash.rules-enforcer"] },
+    configSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        enabled: { type: "boolean" },
+        secretFileAction: { enum: ["ask", "block"] },
+        envDumpAction: { enum: ["ask", "block"] },
+        exfiltrationAction: { enum: ["ask", "block"] }
+      }
+    },
+    defaultConfig: {
+      enabled: true,
+      secretFileAction: "ask",
+      envDumpAction: "block",
+      exfiltrationAction: "block"
+    },
+    tags: ["security", "secrets", "credentials", "privacy"]
+  },
+  {
+    id: "openleash.blast-radius",
+    slug: "blast-radius",
+    name: "blast-radius",
+    description: "Block destructive tool use before agents damage files, databases, or infrastructure.",
+    repositoryUrl: "https://github.com/open-leash/plugin-blast-radius",
+    version: "1.0.0",
+    publisher: "openleash",
+    runtime: "openleash-core",
+    entrypoint: "plugins/blast-radius",
+    events: ["tool.beforeUse"],
+    permissions: ["event:read", "tool:read", "decision:write", "audit:write", "log:write", "signal:write"],
+    effects: ["observe", "ask", "deny"],
+    ordering: { priority: 220, before: ["openleash.rules-enforcer", "openleash.mcp-scanner"] },
+    configSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        enabled: { type: "boolean" },
+        destructiveAction: { enum: ["ask", "block"] },
+        databaseMutationAction: { enum: ["ask", "block"] },
+        broadFilesystemAction: { enum: ["ask", "block"] }
+      }
+    },
+    defaultConfig: {
+      enabled: true,
+      destructiveAction: "block",
+      databaseMutationAction: "ask",
+      broadFilesystemAction: "block"
+    },
+    tags: ["security", "destructive", "database", "tools"]
+  },
+  {
     id: "openleash.rules-enforcer",
     slug: "rules-enforcer",
     name: "rules-enforcer",
     description: "Watch agent conversations and pause when configured rules are violated.",
+    repositoryUrl: "https://github.com/open-leash/plugin-rules-enforcer",
     version: "1.0.0",
     publisher: "openleash",
     runtime: "openleash-core",
@@ -289,6 +358,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     slug: "mcp-scanner",
     name: "mcp-scanner",
     description: "See every MCP server, tool, and call.",
+    repositoryUrl: "https://github.com/open-leash/plugin-mcp-scanner",
     version: "1.0.0",
     publisher: "openleash",
     runtime: "openleash-core",
@@ -308,6 +378,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     slug: "siem-exporter",
     name: "siem-exporter",
     description: "Send agent incidents to your SOC stack.",
+    repositoryUrl: "https://github.com/open-leash/plugin-siem-exporter",
     version: "1.0.0",
     publisher: "openleash",
     runtime: "openleash-core",
@@ -816,20 +887,30 @@ export type PluginInstructionListRequest = {
   scope?: "global" | "project";
 };
 
+export type PluginLlmJsonRequest = {
+  system?: string;
+  prompt: string;
+  schema?: Record<string, unknown>;
+  maxOutputTokens?: number;
+  temperature?: number;
+  purpose?: string;
+};
+
+export type PluginLlmJsonResult<T = unknown> = {
+  json: T;
+  model: string;
+  provider: string;
+  source: "tenant-byok" | "openleash-managed" | "heuristic";
+};
+
 export type PluginCapabilities = {
   context: {
     instructions: {
       list(request?: PluginInstructionListRequest): Promise<PluginInstructionFile[]>;
     };
   };
-  prompt: {
-    compress(request: PluginPromptCompressionRequest): Promise<PluginPromptCompressionResult>;
-  };
-  dlp: {
-    inspect(request: PluginDlpInspectionRequest): Promise<PluginDlpInspectionResult>;
-  };
-  security: {
-    evaluatePolicies(request: PluginPolicyEvaluationRequest): Promise<PluginPolicyEvaluationResult>;
+  llm: {
+    evaluateJson<T = unknown>(request: PluginLlmJsonRequest): Promise<PluginLlmJsonResult<T> | undefined>;
   };
   storage: {
     get<T = unknown>(request: PluginStorageGetRequest): Promise<PluginStorageRead<T> | undefined>;
@@ -929,7 +1010,7 @@ export type EvaluationResponse = {
 
 export type MobileIdentityProvider = {
   id: string;
-  type: "google" | "google_workspace" | "okta" | "azure_ad" | "ping" | "custom";
+  type: "google" | "google_workspace" | "github" | "okta" | "azure_ad" | "ping" | "oidc" | "custom";
   label: string;
   organizationId?: string;
   organizationSlug?: string;
