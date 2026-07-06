@@ -1,7 +1,7 @@
 export type AgentKind = "claude-code" | "codex" | "openclaw" | "nanoclaw" | "salesforce-agentforce" | "azure-ai-foundry" | "microsoft-copilot-studio" | "aws-bedrock-agentcore" | "google-vertex-ai" | "n8n" | "zapier-agents" | "openai-codex-cloud" | "cursor" | "gemini" | "opencode" | "cline" | "continue" | "windsurf" | "github-copilot" | "kiro" | "aider" | "zed" | "unknown";
 export type HookEventName = "SessionStart" | "UserPromptSubmit" | "PreToolUse" | "PostToolUse" | "SubagentStart" | "SubagentStop" | "Notification" | "SessionEnd" | "Stop";
 export type PipelineEvent = "openleash.startup" | "agent.detected" | "skill.changed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended";
-export type PluginPermission = "event:read" | "prompt:read" | "prompt:write" | "tool:read" | "decision:write" | "model:invoke" | "network:access" | "filesystem:read" | "filesystem:write" | "storage:read" | "storage:write" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send";
+export type PluginPermission = "event:read" | "prompt:read" | "prompt:write" | "tool:read" | "decision:write" | "model:invoke" | "network:access" | "instructions:read" | "filesystem:read" | "filesystem:write" | "storage:read" | "storage:write" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send";
 export type PluginEffect = "observe" | "transform" | "ask" | "deny" | "notify" | "inventory";
 export type PluginRuntime = "node" | "openleash-core";
 export type PluginOrdering = {
@@ -118,7 +118,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             };
             action?: undefined;
             categories?: undefined;
-            policySet?: undefined;
+            rules?: undefined;
             protocol?: undefined;
             endpointUrl?: undefined;
             bearerToken?: undefined;
@@ -138,7 +138,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
-        policySet?: undefined;
+        rules?: undefined;
         redactSecrets?: undefined;
         protocol?: undefined;
         endpointUrl?: undefined;
@@ -176,7 +176,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         conciseResponse?: undefined;
         action?: undefined;
         categories?: undefined;
-        policySet?: undefined;
+        rules?: undefined;
         redactSecrets?: undefined;
         protocol?: undefined;
         endpointUrl?: undefined;
@@ -229,7 +229,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             };
             level?: undefined;
             conciseResponse?: undefined;
-            policySet?: undefined;
+            rules?: undefined;
             protocol?: undefined;
             endpointUrl?: undefined;
             bearerToken?: undefined;
@@ -249,7 +249,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         level?: undefined;
         conciseResponse?: undefined;
         suspiciousRiskThreshold?: undefined;
-        policySet?: undefined;
+        rules?: undefined;
         redactSecrets?: undefined;
         protocol?: undefined;
         endpointUrl?: undefined;
@@ -287,8 +287,21 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             enabled: {
                 type: string;
             };
-            policySet: {
+            rules: {
                 type: string;
+                items: {
+                    type: string;
+                    additionalProperties: boolean;
+                    properties: {
+                        text: {
+                            type: string;
+                        };
+                        action: {
+                            type: string;
+                            enum: string[];
+                        };
+                    };
+                };
             };
             level?: undefined;
             conciseResponse?: undefined;
@@ -309,7 +322,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     };
     defaultConfig: {
         enabled: boolean;
-        policySet: string;
+        rules: never[];
         level?: undefined;
         conciseResponse?: undefined;
         suspiciousRiskThreshold?: undefined;
@@ -353,7 +366,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
-        policySet?: undefined;
+        rules?: undefined;
         protocol?: undefined;
         endpointUrl?: undefined;
         bearerToken?: undefined;
@@ -426,7 +439,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             model?: undefined;
             action?: undefined;
             categories?: undefined;
-            policySet?: undefined;
+            rules?: undefined;
         };
     };
     defaultConfig: {
@@ -446,7 +459,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
-        policySet?: undefined;
+        rules?: undefined;
         redactSecrets?: undefined;
     };
     tags: string[];
@@ -756,7 +769,24 @@ export type PluginUsageRecord = PluginUsageRecordRequest & {
     projectPath?: string;
     createdAt: string;
 };
+export type PluginInstructionFile = {
+    agent: string;
+    scope: "global" | "project";
+    label?: string;
+    path?: string;
+    content: string;
+    parsedLines?: string[];
+};
+export type PluginInstructionListRequest = {
+    agent?: string;
+    scope?: "global" | "project";
+};
 export type PluginCapabilities = {
+    context: {
+        instructions: {
+            list(request?: PluginInstructionListRequest): Promise<PluginInstructionFile[]>;
+        };
+    };
     prompt: {
         compress(request: PluginPromptCompressionRequest): Promise<PluginPromptCompressionResult>;
     };
@@ -821,6 +851,7 @@ export type Policy = {
     naturalLanguageRule: string;
     enabled: boolean;
     locked?: boolean;
+    enforcementAction?: "ask" | "block";
 };
 export type PolicyDecision = {
     policyId: string;
@@ -969,7 +1000,7 @@ export type MobileDecisionResolveResponse = {
     resolution_guidance?: string | null;
     resolved_at: string;
 } | null;
-export type HookAgentSlug = "claude" | "codex" | "cursor" | "gemini" | "opencode" | "openclaw" | "nanoclaw";
+export type HookAgentSlug = "claude" | "codex" | "copilot" | "cursor" | "gemini" | "opencode" | "openclaw" | "nanoclaw";
 export declare const HOOK_AGENT_METADATA: Record<HookAgentSlug, {
     kind: AgentKind;
     displayName: string;
@@ -1037,6 +1068,8 @@ export declare const OPENLEASH_API_CONTRACTS: {
     readonly mobileDeviceRegister: "2026-05-22.mobile-device-register.v1";
     readonly mobileState: "2026-05-22.mobile-state.v1";
     readonly mobileDecisionResolve: "2026-05-22.mobile-decision-resolve.v1";
+    readonly clientNotifications: "2026-06-28.client-notifications.v1";
+    readonly clientDecisionResolve: "2026-06-28.client-decision-resolve.v1";
     readonly organizationsRead: "2026-05-16.organizations-read.v1";
     readonly organizationsWrite: "2026-05-16.organizations-write.v1";
     readonly organizationSsoProviders: "2026-05-16.organization-sso-providers.v1";
@@ -1049,8 +1082,8 @@ export declare const OPENLEASH_API_CONTRACTS: {
 export type OpenLeashApiFunction = keyof typeof OPENLEASH_API_CONTRACTS;
 export declare function apiVersionHeaders(functionName: OpenLeashApiFunction): Record<string, string>;
 export declare function apiContractFor(functionName: OpenLeashApiFunction): {
-    functionName: "health" | "tenantEnroll" | "tenantEvaluate" | "tenantHookEvaluate" | "tenantDecisionPoll" | "tenantDecisionResolve" | "tenantTrayStatus" | "tenantSkillObservation" | "tenantPluginsRead" | "desktopEnroll" | "adminOverview" | "adminSecurity" | "adminOutcomes" | "adminMcpServers" | "adminMcpServerDetail" | "adminSkills" | "adminPluginsRead" | "adminPluginsWrite" | "adminLogs" | "adminLogDetail" | "adminTriggers" | "adminTriggerDetail" | "adminEventDetail" | "adminExternalAgents" | "adminExternalAgentsSync" | "adminProviderUsageRead" | "adminProviderUsageWrite" | "adminProviderUsageSync" | "adminOnboardingRead" | "adminOnboardingWrite" | "adminIdentityRead" | "adminUsersWrite" | "adminDeploymentTokensRead" | "adminDeploymentTokensWrite" | "adminPoliciesRead" | "adminPoliciesWrite" | "adminPromptTransformsRead" | "adminPromptTransformsWrite" | "authSession" | "authAccountOutcomes" | "authLogout" | "authSsoAuthorize" | "authSsoCallback" | "authGoogleCallback" | "mobileBootstrap" | "mobileAuthStart" | "mobileAuthExchange" | "mobileModelKey" | "mobileDeviceRegister" | "mobileState" | "mobileDecisionResolve" | "organizationsRead" | "organizationsWrite" | "organizationSsoProviders" | "clientUpdateCheck" | "clientUpdateLatest" | "clientReleasePublish" | "localEvaluate" | "localHookEvaluate";
-    version: "2026-05-16.health.v1" | "2026-05-16.tenant-enroll.v1" | "2026-05-16.tenant-evaluate.v1" | "2026-05-22.tenant-hook-evaluate.v1" | "2026-05-16.tenant-decision-poll.v1" | "2026-05-16.tenant-decision-resolve.v1" | "2026-05-16.tenant-tray-status.v1" | "2026-05-27.tenant-skill-observation.v1" | "2026-06-20.tenant-plugins-read.v1" | "2026-06-03.desktop-enroll.v1" | "2026-05-16.admin-overview.v1" | "2026-06-22.admin-security.v1" | "2026-06-24.admin-outcomes.v1" | "2026-05-27.admin-mcp-servers.v1" | "2026-05-27.admin-mcp-server-detail.v1" | "2026-05-27.admin-skills.v1" | "2026-06-20.admin-plugins-read.v1" | "2026-06-20.admin-plugins-write.v1" | "2026-06-03.admin-logs.v1" | "2026-06-03.admin-log-detail.v1" | "2026-05-16.admin-triggers.v1" | "2026-05-16.admin-trigger-detail.v1" | "2026-05-16.admin-event-detail.v1" | "2026-05-16.admin-external-agents.v1" | "2026-05-16.admin-external-agents-sync.v1" | "2026-06-09.admin-provider-usage-read.v1" | "2026-06-09.admin-provider-usage-write.v1" | "2026-06-09.admin-provider-usage-sync.v1" | "2026-05-16.admin-onboarding-read.v1" | "2026-05-16.admin-onboarding-write.v1" | "2026-05-16.admin-identity-read.v1" | "2026-05-16.admin-users-write.v1" | "2026-05-16.admin-deployment-tokens-read.v1" | "2026-05-16.admin-deployment-tokens-write.v1" | "2026-05-16.admin-policies-read.v1" | "2026-05-16.admin-policies-write.v1" | "2026-06-06.admin-prompt-transforms-read.v1" | "2026-06-06.admin-prompt-transforms-write.v1" | "2026-05-16.auth-session.v1" | "2026-06-24.auth-account-outcomes.v1" | "2026-05-16.auth-logout.v1" | "2026-05-16.auth-sso-authorize.v1" | "2026-05-16.auth-sso-callback.v1" | "2026-05-24.auth-google-callback.v1" | "2026-05-22.mobile-bootstrap.v1" | "2026-05-22.mobile-auth-start.v1" | "2026-05-22.mobile-auth-exchange.v1" | "2026-05-23.mobile-model-key.v1" | "2026-05-22.mobile-device-register.v1" | "2026-05-22.mobile-state.v1" | "2026-05-22.mobile-decision-resolve.v1" | "2026-05-16.organizations-read.v1" | "2026-05-16.organizations-write.v1" | "2026-05-16.organization-sso-providers.v1" | "2026-05-16.client-update-check.v1" | "2026-05-16.client-update-latest.v1" | "2026-05-16.client-release-publish.v1" | "2026-05-16.local-evaluate.v1" | "2026-05-22.local-hook-evaluate.v1";
+    functionName: "health" | "tenantEnroll" | "tenantEvaluate" | "tenantHookEvaluate" | "tenantDecisionPoll" | "tenantDecisionResolve" | "tenantTrayStatus" | "tenantSkillObservation" | "tenantPluginsRead" | "desktopEnroll" | "adminOverview" | "adminSecurity" | "adminOutcomes" | "adminMcpServers" | "adminMcpServerDetail" | "adminSkills" | "adminPluginsRead" | "adminPluginsWrite" | "adminLogs" | "adminLogDetail" | "adminTriggers" | "adminTriggerDetail" | "adminEventDetail" | "adminExternalAgents" | "adminExternalAgentsSync" | "adminProviderUsageRead" | "adminProviderUsageWrite" | "adminProviderUsageSync" | "adminOnboardingRead" | "adminOnboardingWrite" | "adminIdentityRead" | "adminUsersWrite" | "adminDeploymentTokensRead" | "adminDeploymentTokensWrite" | "adminPoliciesRead" | "adminPoliciesWrite" | "adminPromptTransformsRead" | "adminPromptTransformsWrite" | "authSession" | "authAccountOutcomes" | "authLogout" | "authSsoAuthorize" | "authSsoCallback" | "authGoogleCallback" | "mobileBootstrap" | "mobileAuthStart" | "mobileAuthExchange" | "mobileModelKey" | "mobileDeviceRegister" | "mobileState" | "mobileDecisionResolve" | "clientNotifications" | "clientDecisionResolve" | "organizationsRead" | "organizationsWrite" | "organizationSsoProviders" | "clientUpdateCheck" | "clientUpdateLatest" | "clientReleasePublish" | "localEvaluate" | "localHookEvaluate";
+    version: "2026-05-16.health.v1" | "2026-05-16.tenant-enroll.v1" | "2026-05-16.tenant-evaluate.v1" | "2026-05-22.tenant-hook-evaluate.v1" | "2026-05-16.tenant-decision-poll.v1" | "2026-05-16.tenant-decision-resolve.v1" | "2026-05-16.tenant-tray-status.v1" | "2026-05-27.tenant-skill-observation.v1" | "2026-06-20.tenant-plugins-read.v1" | "2026-06-03.desktop-enroll.v1" | "2026-05-16.admin-overview.v1" | "2026-06-22.admin-security.v1" | "2026-06-24.admin-outcomes.v1" | "2026-05-27.admin-mcp-servers.v1" | "2026-05-27.admin-mcp-server-detail.v1" | "2026-05-27.admin-skills.v1" | "2026-06-20.admin-plugins-read.v1" | "2026-06-20.admin-plugins-write.v1" | "2026-06-03.admin-logs.v1" | "2026-06-03.admin-log-detail.v1" | "2026-05-16.admin-triggers.v1" | "2026-05-16.admin-trigger-detail.v1" | "2026-05-16.admin-event-detail.v1" | "2026-05-16.admin-external-agents.v1" | "2026-05-16.admin-external-agents-sync.v1" | "2026-06-09.admin-provider-usage-read.v1" | "2026-06-09.admin-provider-usage-write.v1" | "2026-06-09.admin-provider-usage-sync.v1" | "2026-05-16.admin-onboarding-read.v1" | "2026-05-16.admin-onboarding-write.v1" | "2026-05-16.admin-identity-read.v1" | "2026-05-16.admin-users-write.v1" | "2026-05-16.admin-deployment-tokens-read.v1" | "2026-05-16.admin-deployment-tokens-write.v1" | "2026-05-16.admin-policies-read.v1" | "2026-05-16.admin-policies-write.v1" | "2026-06-06.admin-prompt-transforms-read.v1" | "2026-06-06.admin-prompt-transforms-write.v1" | "2026-05-16.auth-session.v1" | "2026-06-24.auth-account-outcomes.v1" | "2026-05-16.auth-logout.v1" | "2026-05-16.auth-sso-authorize.v1" | "2026-05-16.auth-sso-callback.v1" | "2026-05-24.auth-google-callback.v1" | "2026-05-22.mobile-bootstrap.v1" | "2026-05-22.mobile-auth-start.v1" | "2026-05-22.mobile-auth-exchange.v1" | "2026-05-23.mobile-model-key.v1" | "2026-05-22.mobile-device-register.v1" | "2026-05-22.mobile-state.v1" | "2026-05-22.mobile-decision-resolve.v1" | "2026-06-28.client-notifications.v1" | "2026-06-28.client-decision-resolve.v1" | "2026-05-16.organizations-read.v1" | "2026-05-16.organizations-write.v1" | "2026-05-16.organization-sso-providers.v1" | "2026-05-16.client-update-check.v1" | "2026-05-16.client-update-latest.v1" | "2026-05-16.client-release-publish.v1" | "2026-05-16.local-evaluate.v1" | "2026-05-22.local-hook-evaluate.v1";
 };
 export type OpenLeashEdition = "managed-cloud" | "managed-self-hosted";
 export type OpenLeashClientMode = "community" | "cloud" | "enterprise";

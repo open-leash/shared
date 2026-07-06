@@ -371,7 +371,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
       enabled: true,
       redactSecrets: true
     },
-    tags: ["mcp", "inventory", "audit"]
+    tags: ["security", "mcp", "inventory", "audit"]
   },
   {
     id: "openleash.siem-exporter",
@@ -417,7 +417,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
       includePrompt: false,
       includeToolArguments: false
     },
-    tags: ["siem", "soc", "ecs", "splunk", "syslog", "incident-response"]
+    tags: ["utility", "siem", "soc", "ecs", "splunk", "syslog", "incident-response"]
   }
 ] satisfies OpenLeashPluginManifest[];
 
@@ -712,10 +712,10 @@ export type OpenLeashPluginCategoryMeta = {
 };
 
 export const OPENLEASH_PLUGIN_CATEGORIES: OpenLeashPluginCategoryMeta[] = [
+  { id: "observability", label: "Visibility", color: "#2a63d8", icon: "eye" },
   { id: "cost", label: "Cost", color: "#5b47e0", icon: "trend" },
   { id: "security", label: "Security", color: "#0b7968", icon: "shield" },
-  { id: "observability", label: "Observability", color: "#2a63d8", icon: "eye" },
-  { id: "utility", label: "Utility", color: "#a15b12", icon: "bolt" }
+  { id: "utility", label: "Misc", color: "#a15b12", icon: "bolt" }
 ];
 
 export type OpenLeashClientPluginView = {
@@ -764,8 +764,10 @@ export function pluginPackageId(plugin: Pick<PluginCatalogItem, "id" | "slug" | 
 export function pluginCategoryId(plugin: Pick<PluginCatalogItem, "id" | "name" | "description" | "tags" | "marketplace"> & { category?: unknown; manifest?: { category?: unknown } }): OpenLeashPluginCategoryId {
   const raw = (plugin.marketplace as { category?: unknown } | undefined)?.category || plugin.category || plugin.manifest?.category || "";
   const text = String(raw || `${plugin.id || ""} ${plugin.name || ""} ${plugin.description || ""} ${(plugin.marketplace?.tags || []).join(" ")} ${(plugin.tags || []).join(" ")}`).toLowerCase();
+  if (/siem-exporter/.test(text)) return "utility";
+  if (/mcp-scanner|skill-scanner/.test(text)) return "security";
   if (/security|policy|guard|skill|prompt-injection|risk|approval|dlp|leak|sensitive|secret|credential/.test(text)) return "security";
-  if (/observability|observe|log|mcp|siem|audit|telemetry|monitor/.test(text)) return "observability";
+  if (/visibility|observability|observe|log|mcp|siem|audit|telemetry|monitor/.test(text)) return "observability";
   if (/cost|token|compression|usage|budget|spend/.test(text)) return "cost";
   return "utility";
 }

@@ -82,14 +82,14 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
         tags: ["security", "privacy", "prompt"]
     },
     {
-        id: "openleash.security-evaluator",
-        slug: "sec-evaluator",
-        name: "sec-evaluator",
-        description: "Approve, deny, or log risky agent actions.",
+        id: "openleash.rules-enforcer",
+        slug: "rules-enforcer",
+        name: "rules-enforcer",
+        description: "Watch agent conversations and pause when configured rules are violated.",
         version: "1.0.0",
         publisher: "openleash",
         runtime: "openleash-core",
-        entrypoint: "plugins/security-evaluator",
+        entrypoint: "plugins/rules-enforcer",
         events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse"],
         permissions: ["event:read", "prompt:read", "tool:read", "decision:write", "model:invoke", "audit:write", "log:write", "signal:write", "usage:write", "notification:send"],
         effects: ["observe", "ask", "deny"],
@@ -99,14 +99,24 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
             additionalProperties: false,
             properties: {
                 enabled: { type: "boolean" },
-                policySet: { type: "string" }
+                rules: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        additionalProperties: false,
+                        properties: {
+                            text: { type: "string" },
+                            action: { type: "string", enum: ["ask", "block"] }
+                        }
+                    }
+                }
             }
         },
         defaultConfig: {
             enabled: true,
-            policySet: "active"
+            rules: []
         },
-        tags: ["security", "policy", "approval"]
+        tags: ["security", "rules", "policy", "approval"]
     },
     {
         id: "openleash.mcp-scanner",
@@ -120,12 +130,12 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
         events: ["tool.beforeUse", "tool.afterUse"],
         permissions: ["event:read", "tool:read", "audit:write", "signal:write"],
         effects: ["observe", "inventory"],
-        ordering: { priority: 400, after: ["openleash.security-evaluator"] },
+        ordering: { priority: 400, after: ["openleash.rules-enforcer"] },
         defaultConfig: {
             enabled: true,
             redactSecrets: true
         },
-        tags: ["mcp", "inventory", "audit"]
+        tags: ["security", "mcp", "inventory", "audit"]
     },
     {
         id: "openleash.siem-exporter",
@@ -139,7 +149,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
         events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse", "session.started", "session.ended", "skill.changed", "log.emitted"],
         permissions: ["event:read", "prompt:read", "tool:read", "network:access", "audit:write", "log:write"],
         effects: ["observe", "notify"],
-        ordering: { priority: 900, after: ["openleash.security-evaluator", "openleash.mcp-scanner"] },
+        ordering: { priority: 900, after: ["openleash.rules-enforcer", "openleash.mcp-scanner"] },
         configSchema: {
             type: "object",
             additionalProperties: false,
@@ -170,14 +180,14 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
             includePrompt: false,
             includeToolArguments: false
         },
-        tags: ["siem", "soc", "ecs", "splunk", "syslog", "incident-response"]
+        tags: ["utility", "siem", "soc", "ecs", "splunk", "syslog", "incident-response"]
     }
 ];
 export const OPENLEASH_PLUGIN_CATEGORIES = [
+    { id: "observability", label: "Visibility", color: "#2a63d8", icon: "eye" },
     { id: "cost", label: "Cost", color: "#5b47e0", icon: "trend" },
     { id: "security", label: "Security", color: "#0b7968", icon: "shield" },
-    { id: "observability", label: "Observability", color: "#2a63d8", icon: "eye" },
-    { id: "utility", label: "Utility", color: "#a15b12", icon: "bolt" }
+    { id: "utility", label: "Misc", color: "#a15b12", icon: "bolt" }
 ];
 export function pluginPackageId(plugin) {
     return plugin.slug || plugin.marketplace?.slug || String(plugin.id || "").split(".").pop() || plugin.name || plugin.id;
@@ -185,12 +195,16 @@ export function pluginPackageId(plugin) {
 export function pluginCategoryId(plugin) {
     const raw = plugin.marketplace?.category || plugin.category || plugin.manifest?.category || "";
     const text = String(raw || `${plugin.id || ""} ${plugin.name || ""} ${plugin.description || ""} ${(plugin.marketplace?.tags || []).join(" ")} ${(plugin.tags || []).join(" ")}`).toLowerCase();
-    if (/cost|token|prompt|compression|usage|budget|spend/.test(text))
-        return "cost";
+    if (/siem-exporter/.test(text))
+        return "utility";
+    if (/mcp-scanner|skill-scanner/.test(text))
+        return "security";
     if (/security|policy|guard|skill|prompt-injection|risk|approval|dlp|leak|sensitive|secret|credential/.test(text))
         return "security";
-    if (/observability|observe|log|mcp|siem|audit|telemetry|monitor/.test(text))
+    if (/visibility|observability|observe|log|mcp|siem|audit|telemetry|monitor/.test(text))
         return "observability";
+    if (/cost|token|compression|usage|budget|spend/.test(text))
+        return "cost";
     return "utility";
 }
 export function buildOpenLeashClientViewModel({ plugins, outcomes, summary, shellSections = ["overview", "agents", "activity", "approvals", "policies", "settings"] }) {
@@ -257,6 +271,7 @@ function clientViewSummary(outcomes, summary) {
 export const HOOK_AGENT_METADATA = {
     claude: { kind: "claude-code", displayName: "Claude Code" },
     codex: { kind: "codex", displayName: "OpenAI Codex" },
+    copilot: { kind: "github-copilot", displayName: "GitHub Copilot" },
     cursor: { kind: "cursor", displayName: "Cursor" },
     gemini: { kind: "gemini", displayName: "Google Gemini CLI" },
     opencode: { kind: "opencode", displayName: "OpenCode" },
@@ -317,6 +332,8 @@ export const OPENLEASH_API_CONTRACTS = {
     mobileDeviceRegister: "2026-05-22.mobile-device-register.v1",
     mobileState: "2026-05-22.mobile-state.v1",
     mobileDecisionResolve: "2026-05-22.mobile-decision-resolve.v1",
+    clientNotifications: "2026-06-28.client-notifications.v1",
+    clientDecisionResolve: "2026-06-28.client-decision-resolve.v1",
     organizationsRead: "2026-05-16.organizations-read.v1",
     organizationsWrite: "2026-05-16.organizations-write.v1",
     organizationSsoProviders: "2026-05-16.organization-sso-providers.v1",
