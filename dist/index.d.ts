@@ -1,6 +1,6 @@
 export type AgentKind = "claude-code" | "codex" | "openclaw" | "nanoclaw" | "salesforce-agentforce" | "azure-ai-foundry" | "microsoft-copilot-studio" | "aws-bedrock-agentcore" | "google-vertex-ai" | "n8n" | "zapier-agents" | "openai-codex-cloud" | "cursor" | "gemini" | "opencode" | "cline" | "continue" | "windsurf" | "github-copilot" | "kiro" | "aider" | "zed" | "unknown";
 export type HookEventName = "SessionStart" | "UserPromptSubmit" | "PreToolUse" | "PostToolUse" | "SubagentStart" | "SubagentStop" | "Notification" | "SessionEnd" | "Stop";
-export type PipelineEvent = "openleash.startup" | "agent.detected" | "skill.changed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended";
+export type PipelineEvent = "openleash.startup" | "agent.detected" | "skill.detected" | "skill.changed" | "skill.removed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended";
 export type PluginPermission = "event:read" | "prompt:read" | "prompt:write" | "tool:read" | "decision:write" | "model:invoke" | "network:access" | "instructions:read" | "filesystem:read" | "filesystem:write" | "storage:read" | "storage:write" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send";
 export type PluginEffect = "observe" | "transform" | "ask" | "deny" | "notify" | "inventory";
 export type PluginRuntime = "node" | "openleash-core";
@@ -20,6 +20,7 @@ export type OpenLeashPluginManifest = {
     slug?: string;
     name: string;
     description: string;
+    repositoryUrl?: string;
     version: string;
     publisher: "openleash" | string;
     runtime: PluginRuntime;
@@ -88,6 +89,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     slug: string;
     name: string;
     description: string;
+    repositoryUrl: string;
     version: string;
     publisher: string;
     runtime: "openleash-core";
@@ -118,6 +120,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             };
             action?: undefined;
             categories?: undefined;
+            secretFileAction?: undefined;
+            envDumpAction?: undefined;
+            exfiltrationAction?: undefined;
+            destructiveAction?: undefined;
+            databaseMutationAction?: undefined;
+            broadFilesystemAction?: undefined;
             rules?: undefined;
             protocol?: undefined;
             endpointUrl?: undefined;
@@ -138,6 +146,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
+        secretFileAction?: undefined;
+        envDumpAction?: undefined;
+        exfiltrationAction?: undefined;
+        destructiveAction?: undefined;
+        databaseMutationAction?: undefined;
+        broadFilesystemAction?: undefined;
         rules?: undefined;
         redactSecrets?: undefined;
         protocol?: undefined;
@@ -157,11 +171,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     slug: string;
     name: string;
     description: string;
+    repositoryUrl: string;
     version: string;
     publisher: string;
     runtime: "openleash-core";
     entrypoint: string;
-    events: ("openleash.startup" | "agent.detected" | "skill.changed")[];
+    events: ("openleash.startup" | "agent.detected" | "skill.detected" | "skill.changed")[];
     permissions: ("event:read" | "decision:write" | "model:invoke" | "filesystem:read" | "audit:write" | "log:write" | "signal:write" | "notification:send")[];
     effects: ("observe" | "ask" | "inventory")[];
     ordering: {
@@ -176,6 +191,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         conciseResponse?: undefined;
         action?: undefined;
         categories?: undefined;
+        secretFileAction?: undefined;
+        envDumpAction?: undefined;
+        exfiltrationAction?: undefined;
+        destructiveAction?: undefined;
+        databaseMutationAction?: undefined;
+        broadFilesystemAction?: undefined;
         rules?: undefined;
         redactSecrets?: undefined;
         protocol?: undefined;
@@ -196,6 +217,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     slug: string;
     name: string;
     description: string;
+    repositoryUrl: string;
     version: string;
     publisher: string;
     runtime: "openleash-core";
@@ -229,6 +251,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             };
             level?: undefined;
             conciseResponse?: undefined;
+            secretFileAction?: undefined;
+            envDumpAction?: undefined;
+            exfiltrationAction?: undefined;
+            destructiveAction?: undefined;
+            databaseMutationAction?: undefined;
+            broadFilesystemAction?: undefined;
             rules?: undefined;
             protocol?: undefined;
             endpointUrl?: undefined;
@@ -249,6 +277,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         level?: undefined;
         conciseResponse?: undefined;
         suspiciousRiskThreshold?: undefined;
+        secretFileAction?: undefined;
+        envDumpAction?: undefined;
+        exfiltrationAction?: undefined;
+        destructiveAction?: undefined;
+        databaseMutationAction?: undefined;
+        broadFilesystemAction?: undefined;
         rules?: undefined;
         redactSecrets?: undefined;
         protocol?: undefined;
@@ -268,6 +302,171 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     slug: string;
     name: string;
     description: string;
+    repositoryUrl: string;
+    version: string;
+    publisher: string;
+    runtime: "openleash-core";
+    entrypoint: string;
+    events: ("prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse")[];
+    permissions: ("event:read" | "prompt:read" | "tool:read" | "decision:write" | "model:invoke" | "audit:write" | "log:write" | "signal:write")[];
+    effects: ("observe" | "ask" | "deny")[];
+    ordering: {
+        priority: number;
+        before: string[];
+        after?: undefined;
+    };
+    configSchema: {
+        type: "object";
+        additionalProperties: false;
+        properties: {
+            enabled: {
+                type: string;
+            };
+            secretFileAction: {
+                enum: string[];
+            };
+            envDumpAction: {
+                enum: string[];
+            };
+            exfiltrationAction: {
+                enum: string[];
+            };
+            level?: undefined;
+            conciseResponse?: undefined;
+            model?: undefined;
+            action?: undefined;
+            categories?: undefined;
+            destructiveAction?: undefined;
+            databaseMutationAction?: undefined;
+            broadFilesystemAction?: undefined;
+            rules?: undefined;
+            protocol?: undefined;
+            endpointUrl?: undefined;
+            bearerToken?: undefined;
+            hecToken?: undefined;
+            source?: undefined;
+            sourcetype?: undefined;
+            index?: undefined;
+            minSeverity?: undefined;
+            includePrompt?: undefined;
+            includeToolArguments?: undefined;
+        };
+    };
+    defaultConfig: {
+        enabled: boolean;
+        secretFileAction: string;
+        envDumpAction: string;
+        exfiltrationAction: string;
+        level?: undefined;
+        conciseResponse?: undefined;
+        suspiciousRiskThreshold?: undefined;
+        action?: undefined;
+        categories?: undefined;
+        destructiveAction?: undefined;
+        databaseMutationAction?: undefined;
+        broadFilesystemAction?: undefined;
+        rules?: undefined;
+        redactSecrets?: undefined;
+        protocol?: undefined;
+        endpointUrl?: undefined;
+        bearerToken?: undefined;
+        hecToken?: undefined;
+        source?: undefined;
+        sourcetype?: undefined;
+        index?: undefined;
+        minSeverity?: undefined;
+        includePrompt?: undefined;
+        includeToolArguments?: undefined;
+    };
+    tags: string[];
+} | {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    repositoryUrl: string;
+    version: string;
+    publisher: string;
+    runtime: "openleash-core";
+    entrypoint: string;
+    events: "tool.beforeUse"[];
+    permissions: ("event:read" | "tool:read" | "decision:write" | "audit:write" | "log:write" | "signal:write")[];
+    effects: ("observe" | "ask" | "deny")[];
+    ordering: {
+        priority: number;
+        before: string[];
+        after?: undefined;
+    };
+    configSchema: {
+        type: "object";
+        additionalProperties: false;
+        properties: {
+            enabled: {
+                type: string;
+            };
+            destructiveAction: {
+                enum: string[];
+            };
+            databaseMutationAction: {
+                enum: string[];
+            };
+            broadFilesystemAction: {
+                enum: string[];
+            };
+            level?: undefined;
+            conciseResponse?: undefined;
+            model?: undefined;
+            action?: undefined;
+            categories?: undefined;
+            secretFileAction?: undefined;
+            envDumpAction?: undefined;
+            exfiltrationAction?: undefined;
+            rules?: undefined;
+            protocol?: undefined;
+            endpointUrl?: undefined;
+            bearerToken?: undefined;
+            hecToken?: undefined;
+            source?: undefined;
+            sourcetype?: undefined;
+            index?: undefined;
+            minSeverity?: undefined;
+            includePrompt?: undefined;
+            includeToolArguments?: undefined;
+        };
+    };
+    defaultConfig: {
+        enabled: boolean;
+        destructiveAction: string;
+        databaseMutationAction: string;
+        broadFilesystemAction: string;
+        level?: undefined;
+        conciseResponse?: undefined;
+        suspiciousRiskThreshold?: undefined;
+        action?: undefined;
+        categories?: undefined;
+        secretFileAction?: undefined;
+        envDumpAction?: undefined;
+        exfiltrationAction?: undefined;
+        rules?: undefined;
+        redactSecrets?: undefined;
+        protocol?: undefined;
+        endpointUrl?: undefined;
+        bearerToken?: undefined;
+        hecToken?: undefined;
+        source?: undefined;
+        sourcetype?: undefined;
+        index?: undefined;
+        minSeverity?: undefined;
+        includePrompt?: undefined;
+        includeToolArguments?: undefined;
+    };
+    tags: string[];
+} | {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    repositoryUrl: string;
     version: string;
     publisher: string;
     runtime: "openleash-core";
@@ -308,6 +507,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             model?: undefined;
             action?: undefined;
             categories?: undefined;
+            secretFileAction?: undefined;
+            envDumpAction?: undefined;
+            exfiltrationAction?: undefined;
+            destructiveAction?: undefined;
+            databaseMutationAction?: undefined;
+            broadFilesystemAction?: undefined;
             protocol?: undefined;
             endpointUrl?: undefined;
             bearerToken?: undefined;
@@ -328,6 +533,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
+        secretFileAction?: undefined;
+        envDumpAction?: undefined;
+        exfiltrationAction?: undefined;
+        destructiveAction?: undefined;
+        databaseMutationAction?: undefined;
+        broadFilesystemAction?: undefined;
         redactSecrets?: undefined;
         protocol?: undefined;
         endpointUrl?: undefined;
@@ -346,6 +557,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     slug: string;
     name: string;
     description: string;
+    repositoryUrl: string;
     version: string;
     publisher: string;
     runtime: "openleash-core";
@@ -366,6 +578,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
+        secretFileAction?: undefined;
+        envDumpAction?: undefined;
+        exfiltrationAction?: undefined;
+        destructiveAction?: undefined;
+        databaseMutationAction?: undefined;
+        broadFilesystemAction?: undefined;
         rules?: undefined;
         protocol?: undefined;
         endpointUrl?: undefined;
@@ -385,11 +603,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     slug: string;
     name: string;
     description: string;
+    repositoryUrl: string;
     version: string;
     publisher: string;
     runtime: "openleash-core";
     entrypoint: string;
-    events: ("skill.changed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended")[];
+    events: ("skill.detected" | "skill.changed" | "skill.removed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended")[];
     permissions: ("event:read" | "prompt:read" | "tool:read" | "network:access" | "audit:write" | "log:write")[];
     effects: ("observe" | "notify")[];
     ordering: {
@@ -439,6 +658,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             model?: undefined;
             action?: undefined;
             categories?: undefined;
+            secretFileAction?: undefined;
+            envDumpAction?: undefined;
+            exfiltrationAction?: undefined;
+            destructiveAction?: undefined;
+            databaseMutationAction?: undefined;
+            broadFilesystemAction?: undefined;
             rules?: undefined;
         };
     };
@@ -459,6 +684,12 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
+        secretFileAction?: undefined;
+        envDumpAction?: undefined;
+        exfiltrationAction?: undefined;
+        destructiveAction?: undefined;
+        databaseMutationAction?: undefined;
+        broadFilesystemAction?: undefined;
         rules?: undefined;
         redactSecrets?: undefined;
     };
@@ -781,20 +1012,28 @@ export type PluginInstructionListRequest = {
     agent?: string;
     scope?: "global" | "project";
 };
+export type PluginLlmJsonRequest = {
+    system?: string;
+    prompt: string;
+    schema?: Record<string, unknown>;
+    maxOutputTokens?: number;
+    temperature?: number;
+    purpose?: string;
+};
+export type PluginLlmJsonResult<T = unknown> = {
+    json: T;
+    model: string;
+    provider: string;
+    source: "tenant-byok" | "openleash-managed" | "heuristic";
+};
 export type PluginCapabilities = {
     context: {
         instructions: {
             list(request?: PluginInstructionListRequest): Promise<PluginInstructionFile[]>;
         };
     };
-    prompt: {
-        compress(request: PluginPromptCompressionRequest): Promise<PluginPromptCompressionResult>;
-    };
-    dlp: {
-        inspect(request: PluginDlpInspectionRequest): Promise<PluginDlpInspectionResult>;
-    };
-    security: {
-        evaluatePolicies(request: PluginPolicyEvaluationRequest): Promise<PluginPolicyEvaluationResult>;
+    llm: {
+        evaluateJson<T = unknown>(request: PluginLlmJsonRequest): Promise<PluginLlmJsonResult<T> | undefined>;
     };
     storage: {
         get<T = unknown>(request: PluginStorageGetRequest): Promise<PluginStorageRead<T> | undefined>;
@@ -886,7 +1125,7 @@ export type EvaluationResponse = {
 };
 export type MobileIdentityProvider = {
     id: string;
-    type: "google" | "google_workspace" | "okta" | "azure_ad" | "ping" | "custom";
+    type: "google" | "google_workspace" | "github" | "okta" | "azure_ad" | "ping" | "oidc" | "custom";
     label: string;
     organizationId?: string;
     organizationSlug?: string;

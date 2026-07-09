@@ -37,7 +37,9 @@ export type HookEventName =
 export type PipelineEvent =
   | "openleash.startup"
   | "agent.detected"
+  | "skill.detected"
   | "skill.changed"
+  | "skill.removed"
   | "log.emitted"
   | "prompt.beforeSubmit"
   | "agent.response"
@@ -207,7 +209,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     publisher: "openleash",
     runtime: "openleash-core",
     entrypoint: "plugins/skill-scanner",
-    events: ["openleash.startup", "agent.detected", "skill.changed"],
+    events: ["openleash.startup", "agent.detected", "skill.detected", "skill.changed"],
     permissions: ["event:read", "filesystem:read", "decision:write", "model:invoke", "audit:write", "log:write", "signal:write", "notification:send"],
     effects: ["observe", "ask", "inventory"],
     ordering: { priority: 150 },
@@ -383,7 +385,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     publisher: "openleash",
     runtime: "openleash-core",
     entrypoint: "plugins/siem-exporter",
-    events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse", "session.started", "session.ended", "skill.changed", "log.emitted"],
+    events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse", "session.started", "session.ended", "skill.detected", "skill.changed", "skill.removed", "log.emitted"],
     permissions: ["event:read", "prompt:read", "tool:read", "network:access", "audit:write", "log:write"],
     effects: ["observe", "notify"],
     ordering: { priority: 900, after: ["openleash.rules-enforcer", "openleash.mcp-scanner"] },
