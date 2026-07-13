@@ -101,6 +101,8 @@ export type OpenLeashPluginManifest = {
   version: string;
   publisher: "openleash" | string;
   runtime: PluginRuntime;
+  /** `cloud-only` plugins are never executed by Individual Open Source or Private Cloud runtimes. */
+  executionEnvironment?: "any" | "cloud-only";
   entrypoint: string;
   events: PipelineEvent[];
   permissions: PluginPermission[];
@@ -1001,6 +1003,34 @@ export type EvaluationRequest = {
     executablePath?: string;
   };
   event: OpenLeashEvent;
+};
+
+/** Transport-independent event contract used by hooks, the local proxy and pullers. */
+export type AgentEventSource = "api_hook" | "local_proxy" | "provider_puller";
+
+export type AgentEventCapabilities = {
+  observe: true;
+  block: boolean;
+  rewritePrompt: boolean;
+  rewriteToolInput: boolean;
+  rewriteResponse: boolean;
+};
+
+export type NormalizedAgentEvent = {
+  schemaVersion: "2026-07-12.v1";
+  idempotencyKey: string;
+  correlationId?: string;
+  source: AgentEventSource;
+  provider: string;
+  capabilities: AgentEventCapabilities;
+  request: EvaluationRequest;
+  receivedAt?: string;
+};
+
+export type NormalizedAgentEventResult = EvaluationResponse & {
+  deduplicated: boolean;
+  source: AgentEventSource;
+  finalPrompt?: string;
 };
 
 export type EvaluationResponse = {
