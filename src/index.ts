@@ -42,6 +42,8 @@ export type PipelineEvent =
   | "skill.removed"
   | "log.emitted"
   | "prompt.beforeSubmit"
+  | "provider.request.beforeSend"
+  | "plugin.tool.execute"
   | "agent.response"
   | "tool.beforeUse"
   | "tool.afterUse"
@@ -52,6 +54,9 @@ export type PluginPermission =
   | "event:read"
   | "prompt:read"
   | "prompt:write"
+  | "provider-request:read"
+  | "provider-request:write"
+  | "local-model:run"
   | "tool:read"
   | "decision:write"
   | "model:invoke"
@@ -77,7 +82,35 @@ export type PluginEffect =
 
 export type PluginRuntime =
   | "node"
-  | "openleash-core";
+  | "openleash-core"
+  | "container";
+
+export type PluginContainerPlacement = "edge" | "server" | "either";
+
+export type PluginContainerExecution = {
+  type: "container";
+  placement: PluginContainerPlacement;
+  protocol: "openleash-container-plugin.v1";
+  image: string;
+  /** Production releases pin the immutable image digest separately from the human-readable tag. */
+  digest?: string;
+  healthPath?: string;
+  transformPath?: string;
+  toolExecutePath?: string;
+  /** Loopback-only port used by the desktop edge runtime; never exposed publicly. */
+  edgePort?: number;
+  timeoutMs?: number;
+  failureMode?: "open" | "closed";
+  resources?: {
+    memoryMb?: number;
+    cpuShares?: number;
+  };
+  isolation?: "shared-trusted" | "tenant-dedicated" | "customer-hosted";
+  storage?: {
+    persistent: boolean;
+    volumeName?: string;
+  };
+};
 
 export type PluginOrdering = {
   before?: string[];
@@ -101,6 +134,7 @@ export type OpenLeashPluginManifest = {
   version: string;
   publisher: "openleash" | string;
   runtime: PluginRuntime;
+  execution?: PluginContainerExecution;
   /** `cloud-only` plugins are never executed by Individual Open Source or Private Cloud runtimes. */
   executionEnvironment?: "any" | "cloud-only";
   entrypoint: string;
@@ -166,6 +200,10 @@ export type PluginSettingState = {
   enabled: boolean;
   config: Record<string, unknown>;
   orderingPriority?: number | null;
+  installedVersion?: string;
+  availableVersion?: string;
+  updateAvailable?: boolean;
+  updatePolicy?: "manual" | "patch" | "minor" | "locked";
   updatedAt?: string;
 };
 
@@ -176,12 +214,28 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     name: "token-saver",
     description: "Trim noisy context before every model call.",
     repositoryUrl: "https://github.com/open-leash/plugin-token-saver",
-    version: "1.0.0",
+    version: "1.1.0",
     publisher: "openleash",
-    runtime: "openleash-core",
-    entrypoint: "plugins/prompt-compression",
-    events: ["prompt.beforeSubmit"],
-    permissions: ["event:read", "prompt:read", "prompt:write", "model:invoke", "audit:write", "usage:write"],
+    runtime: "container",
+    execution: {
+      type: "container",
+      placement: "either",
+      protocol: "openleash-container-plugin.v1",
+      image: "ghcr.io/open-leash/token-saver:1.1.0",
+      digest: "sha256:bc36ea66eb9694cc9e45d160a0a589c410fd61a6b4b0b91caaaedd6a370637f1",
+      healthPath: "/healthz",
+      transformPath: "/v1/transform",
+      toolExecutePath: "/v1/tools/execute",
+      edgePort: 9331,
+      timeoutMs: 30000,
+      failureMode: "open",
+      isolation: "shared-trusted",
+      resources: { memoryMb: 1024, cpuShares: 1024 },
+      storage: { persistent: true, volumeName: "openleash-token-saver-data" }
+    },
+    entrypoint: "container",
+    events: ["provider.request.beforeSend", "plugin.tool.execute", "prompt.beforeSubmit"],
+    permissions: ["event:read", "prompt:read", "prompt:write", "provider-request:read", "provider-request:write", "local-model:run", "storage:read", "storage:write", "audit:write", "log:write", "usage:write"],
     effects: ["transform", "observe"],
     ordering: { priority: 100, before: ["openleash.dlp"] },
     configSchema: {
@@ -191,13 +245,21 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
         enabled: { type: "boolean" },
         level: { enum: ["light", "standard", "maximum"] },
         conciseResponse: { type: "boolean" },
-        model: { type: "string" }
+        model: { type: "string" },
+        minimumChars: { type: "number", minimum: 256 },
+        protectRecent: { type: "number", minimum: 0 },
+        ccrEnabled: { type: "boolean" },
+        ccrTtlSeconds: { type: "number", minimum: 60 }
       }
     },
     defaultConfig: {
       enabled: false,
       level: "standard",
-      conciseResponse: false
+      conciseResponse: false,
+      minimumChars: 1200,
+      protectRecent: 2,
+      ccrEnabled: false,
+      ccrTtlSeconds: 3600
     },
     tags: ["tokens", "cost", "prompt"]
   },
@@ -719,7 +781,7 @@ export const OPENLEASH_PLUGIN_CATEGORIES: OpenLeashPluginCategoryMeta[] = [
   { id: "observability", label: "Visibility", color: "#2a63d8", icon: "eye" },
   { id: "cost", label: "Cost", color: "#5b47e0", icon: "trend" },
   { id: "security", label: "Security", color: "#0b7968", icon: "shield" },
-  { id: "utility", label: "Misc", color: "#a15b12", icon: "bolt" }
+  { id: "utility", label: "Other", color: "#a15b12", icon: "bolt" }
 ];
 
 export type OpenLeashClientPluginView = {
