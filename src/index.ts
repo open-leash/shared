@@ -196,9 +196,31 @@ export type PluginCatalogItem = OpenLeashPluginManifest & {
   };
 };
 
+export type PluginSettingProfile = {
+  /** Stable client-generated identifier used in audit records and container caches. */
+  id: string;
+  name: string;
+  /** Empty means every agent. Matching profiles are merged in ascending priority order. */
+  agentKinds: AgentKind[];
+  /** Stable enrolled-agent identifiers. Empty means any instance of a matching kind. */
+  agentIds?: string[];
+  enabled?: boolean;
+  config: Record<string, unknown>;
+  priority?: number;
+};
+
 export type PluginSettingState = {
   enabled: boolean;
   config: Record<string, unknown>;
+  /** Profiles editable at the current API scope (organization for admin, user for client). */
+  profiles?: PluginSettingProfile[];
+  /** Read-only organization profiles inherited by a user. */
+  inheritedProfiles?: PluginSettingProfile[];
+  /** Profiles selected for the current agent event, when a runtime context is present. */
+  effectiveProfileIds?: string[];
+  /** False when the selected installed version has no approved executable release. */
+  runtimeAvailable?: boolean;
+  runtimeError?: string;
   orderingPriority?: number | null;
   installedVersion?: string;
   availableVersion?: string;
@@ -1061,6 +1083,7 @@ export type EvaluationRequest = {
   agent: {
     kind: AgentKind;
     displayName: string;
+    instanceId?: string;
     version?: string;
     executablePath?: string;
   };
