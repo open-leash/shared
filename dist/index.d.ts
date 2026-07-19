@@ -1,9 +1,34 @@
 export type AgentKind = "claude-code" | "codex" | "openclaw" | "nanoclaw" | "salesforce-agentforce" | "azure-ai-foundry" | "microsoft-copilot-studio" | "aws-bedrock-agentcore" | "google-vertex-ai" | "n8n" | "zapier-agents" | "openai-codex-cloud" | "cursor" | "gemini" | "opencode" | "cline" | "continue" | "windsurf" | "github-copilot" | "kiro" | "aider" | "zed" | "unknown";
 export type HookEventName = "SessionStart" | "UserPromptSubmit" | "PreToolUse" | "PostToolUse" | "SubagentStart" | "SubagentStop" | "Notification" | "SessionEnd" | "Stop";
-export type PipelineEvent = "openleash.startup" | "agent.detected" | "skill.detected" | "skill.changed" | "skill.removed" | "log.emitted" | "prompt.beforeSubmit" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended";
-export type PluginPermission = "event:read" | "prompt:read" | "prompt:write" | "tool:read" | "decision:write" | "model:invoke" | "network:access" | "instructions:read" | "filesystem:read" | "filesystem:write" | "storage:read" | "storage:write" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send";
+export type PipelineEvent = "openleash.startup" | "agent.detected" | "skill.detected" | "skill.changed" | "skill.removed" | "log.emitted" | "prompt.beforeSubmit" | "provider.request.beforeSend" | "plugin.tool.execute" | "agent.response" | "tool.beforeUse" | "tool.afterUse" | "session.started" | "session.ended";
+export type PluginPermission = "event:read" | "prompt:read" | "prompt:write" | "provider-request:read" | "provider-request:write" | "local-model:run" | "tool:read" | "decision:write" | "model:invoke" | "network:access" | "instructions:read" | "filesystem:read" | "filesystem:write" | "storage:read" | "storage:write" | "audit:write" | "log:write" | "signal:write" | "usage:write" | "notification:send";
 export type PluginEffect = "observe" | "transform" | "ask" | "deny" | "notify" | "inventory";
-export type PluginRuntime = "node" | "openleash-core";
+export type PluginRuntime = "node" | "openleash-core" | "container";
+export type PluginContainerPlacement = "edge" | "server" | "either";
+export type PluginContainerExecution = {
+    type: "container";
+    placement: PluginContainerPlacement;
+    protocol: "openleash-container-plugin.v1";
+    image: string;
+    /** Production releases pin the immutable image digest separately from the human-readable tag. */
+    digest?: string;
+    healthPath?: string;
+    transformPath?: string;
+    toolExecutePath?: string;
+    /** Loopback-only port used by the desktop edge runtime; never exposed publicly. */
+    edgePort?: number;
+    timeoutMs?: number;
+    failureMode?: "open" | "closed";
+    resources?: {
+        memoryMb?: number;
+        cpuShares?: number;
+    };
+    isolation?: "shared-trusted" | "tenant-dedicated" | "customer-hosted";
+    storage?: {
+        persistent: boolean;
+        volumeName?: string;
+    };
+};
 export type PluginOrdering = {
     before?: string[];
     after?: string[];
@@ -24,6 +49,9 @@ export type OpenLeashPluginManifest = {
     version: string;
     publisher: "openleash" | string;
     runtime: PluginRuntime;
+    execution?: PluginContainerExecution;
+    /** `cloud-only` plugins are never executed by Individual Open Source or Private Cloud runtimes. */
+    executionEnvironment?: "any" | "cloud-only";
     entrypoint: string;
     events: PipelineEvent[];
     permissions: PluginPermission[];
@@ -78,10 +106,35 @@ export type PluginCatalogItem = OpenLeashPluginManifest & {
         configLocked?: boolean;
     };
 };
+export type PluginSettingProfile = {
+    /** Stable client-generated identifier used in audit records and container caches. */
+    id: string;
+    name: string;
+    /** Empty means every agent. Matching profiles are merged in ascending priority order. */
+    agentKinds: AgentKind[];
+    /** Stable enrolled-agent identifiers. Empty means any instance of a matching kind. */
+    agentIds?: string[];
+    enabled?: boolean;
+    config: Record<string, unknown>;
+    priority?: number;
+};
 export type PluginSettingState = {
     enabled: boolean;
     config: Record<string, unknown>;
+    /** Profiles editable at the current API scope (organization for admin, user for client). */
+    profiles?: PluginSettingProfile[];
+    /** Read-only organization profiles inherited by a user. */
+    inheritedProfiles?: PluginSettingProfile[];
+    /** Profiles selected for the current agent event, when a runtime context is present. */
+    effectiveProfileIds?: string[];
+    /** False when the selected installed version has no approved executable release. */
+    runtimeAvailable?: boolean;
+    runtimeError?: string;
     orderingPriority?: number | null;
+    installedVersion?: string;
+    availableVersion?: string;
+    updateAvailable?: boolean;
+    updatePolicy?: "manual" | "patch" | "minor" | "locked";
     updatedAt?: string;
 };
 export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
@@ -92,10 +145,32 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
     repositoryUrl: string;
     version: string;
     publisher: string;
-    runtime: "openleash-core";
+    runtime: "container";
+    execution: {
+        type: "container";
+        placement: "either";
+        protocol: "openleash-container-plugin.v1";
+        image: string;
+        digest: string;
+        healthPath: string;
+        transformPath: string;
+        toolExecutePath: string;
+        edgePort: number;
+        timeoutMs: number;
+        failureMode: "open";
+        isolation: "shared-trusted";
+        resources: {
+            memoryMb: number;
+            cpuShares: number;
+        };
+        storage: {
+            persistent: true;
+            volumeName: string;
+        };
+    };
     entrypoint: string;
-    events: "prompt.beforeSubmit"[];
-    permissions: ("event:read" | "prompt:read" | "prompt:write" | "model:invoke" | "audit:write" | "usage:write")[];
+    events: ("prompt.beforeSubmit" | "provider.request.beforeSend" | "plugin.tool.execute")[];
+    permissions: ("event:read" | "prompt:read" | "prompt:write" | "provider-request:read" | "provider-request:write" | "local-model:run" | "storage:read" | "storage:write" | "audit:write" | "log:write" | "usage:write")[];
     effects: ("observe" | "transform")[];
     ordering: {
         priority: number;
@@ -117,6 +192,21 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             };
             model: {
                 type: string;
+            };
+            minimumChars: {
+                type: string;
+                minimum: number;
+            };
+            protectRecent: {
+                type: string;
+                minimum: number;
+            };
+            ccrEnabled: {
+                type: string;
+            };
+            ccrTtlSeconds: {
+                type: string;
+                minimum: number;
             };
             action?: undefined;
             categories?: undefined;
@@ -143,6 +233,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         enabled: boolean;
         level: string;
         conciseResponse: boolean;
+        minimumChars: number;
+        protectRecent: number;
+        ccrEnabled: boolean;
+        ccrTtlSeconds: number;
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
@@ -189,6 +283,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         suspiciousRiskThreshold: number;
         level?: undefined;
         conciseResponse?: undefined;
+        minimumChars?: undefined;
+        protectRecent?: undefined;
+        ccrEnabled?: undefined;
+        ccrTtlSeconds?: undefined;
         action?: undefined;
         categories?: undefined;
         secretFileAction?: undefined;
@@ -211,6 +309,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         includeToolArguments?: undefined;
     };
     tags: string[];
+    execution?: undefined;
     configSchema?: undefined;
 } | {
     id: string;
@@ -251,6 +350,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             };
             level?: undefined;
             conciseResponse?: undefined;
+            minimumChars?: undefined;
+            protectRecent?: undefined;
+            ccrEnabled?: undefined;
+            ccrTtlSeconds?: undefined;
             secretFileAction?: undefined;
             envDumpAction?: undefined;
             exfiltrationAction?: undefined;
@@ -276,6 +379,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         categories: string[];
         level?: undefined;
         conciseResponse?: undefined;
+        minimumChars?: undefined;
+        protectRecent?: undefined;
+        ccrEnabled?: undefined;
+        ccrTtlSeconds?: undefined;
         suspiciousRiskThreshold?: undefined;
         secretFileAction?: undefined;
         envDumpAction?: undefined;
@@ -297,6 +404,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         includeToolArguments?: undefined;
     };
     tags: string[];
+    execution?: undefined;
 } | {
     id: string;
     slug: string;
@@ -334,6 +442,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             level?: undefined;
             conciseResponse?: undefined;
             model?: undefined;
+            minimumChars?: undefined;
+            protectRecent?: undefined;
+            ccrEnabled?: undefined;
+            ccrTtlSeconds?: undefined;
             action?: undefined;
             categories?: undefined;
             destructiveAction?: undefined;
@@ -359,6 +471,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         exfiltrationAction: string;
         level?: undefined;
         conciseResponse?: undefined;
+        minimumChars?: undefined;
+        protectRecent?: undefined;
+        ccrEnabled?: undefined;
+        ccrTtlSeconds?: undefined;
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
@@ -379,6 +495,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         includeToolArguments?: undefined;
     };
     tags: string[];
+    execution?: undefined;
 } | {
     id: string;
     slug: string;
@@ -416,6 +533,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             level?: undefined;
             conciseResponse?: undefined;
             model?: undefined;
+            minimumChars?: undefined;
+            protectRecent?: undefined;
+            ccrEnabled?: undefined;
+            ccrTtlSeconds?: undefined;
             action?: undefined;
             categories?: undefined;
             secretFileAction?: undefined;
@@ -441,6 +562,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         broadFilesystemAction: string;
         level?: undefined;
         conciseResponse?: undefined;
+        minimumChars?: undefined;
+        protectRecent?: undefined;
+        ccrEnabled?: undefined;
+        ccrTtlSeconds?: undefined;
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
@@ -461,6 +586,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         includeToolArguments?: undefined;
     };
     tags: string[];
+    execution?: undefined;
 } | {
     id: string;
     slug: string;
@@ -505,6 +631,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             level?: undefined;
             conciseResponse?: undefined;
             model?: undefined;
+            minimumChars?: undefined;
+            protectRecent?: undefined;
+            ccrEnabled?: undefined;
+            ccrTtlSeconds?: undefined;
             action?: undefined;
             categories?: undefined;
             secretFileAction?: undefined;
@@ -530,6 +660,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         rules: never[];
         level?: undefined;
         conciseResponse?: undefined;
+        minimumChars?: undefined;
+        protectRecent?: undefined;
+        ccrEnabled?: undefined;
+        ccrTtlSeconds?: undefined;
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
@@ -552,6 +686,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         includeToolArguments?: undefined;
     };
     tags: string[];
+    execution?: undefined;
 } | {
     id: string;
     slug: string;
@@ -575,6 +710,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         redactSecrets: boolean;
         level?: undefined;
         conciseResponse?: undefined;
+        minimumChars?: undefined;
+        protectRecent?: undefined;
+        ccrEnabled?: undefined;
+        ccrTtlSeconds?: undefined;
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
@@ -597,6 +736,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         includeToolArguments?: undefined;
     };
     tags: string[];
+    execution?: undefined;
     configSchema?: undefined;
 } | {
     id: string;
@@ -656,6 +796,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
             level?: undefined;
             conciseResponse?: undefined;
             model?: undefined;
+            minimumChars?: undefined;
+            protectRecent?: undefined;
+            ccrEnabled?: undefined;
+            ccrTtlSeconds?: undefined;
             action?: undefined;
             categories?: undefined;
             secretFileAction?: undefined;
@@ -681,6 +825,10 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         includeToolArguments: boolean;
         level?: undefined;
         conciseResponse?: undefined;
+        minimumChars?: undefined;
+        protectRecent?: undefined;
+        ccrEnabled?: undefined;
+        ccrTtlSeconds?: undefined;
         suspiciousRiskThreshold?: undefined;
         action?: undefined;
         categories?: undefined;
@@ -694,6 +842,7 @@ export declare const FIRST_PARTY_PLUGIN_MANIFESTS: ({
         redactSecrets?: undefined;
     };
     tags: string[];
+    execution?: undefined;
 })[];
 export type PluginRunStatus = "skipped" | "passed" | "modified" | "blocked" | "needs_question" | "failed";
 export type PluginFinding = {
@@ -1110,18 +1259,82 @@ export type EvaluationRequest = {
     agent: {
         kind: AgentKind;
         displayName: string;
+        instanceId?: string;
         version?: string;
         executablePath?: string;
     };
     event: OpenLeashEvent;
+};
+/** Transport-independent event contract used by hooks, the local proxy and pullers. */
+export type AgentEventSource = "api_hook" | "local_proxy" | "provider_puller";
+export type AgentEventCapabilities = {
+    observe: true;
+    block: boolean;
+    rewritePrompt: boolean;
+    rewriteToolInput: boolean;
+    rewriteResponse: boolean;
+};
+export type NormalizedAgentEvent = {
+    schemaVersion: "2026-07-12.v1";
+    idempotencyKey: string;
+    correlationId?: string;
+    source: AgentEventSource;
+    provider: string;
+    capabilities: AgentEventCapabilities;
+    request: EvaluationRequest;
+    receivedAt?: string;
+};
+export type NormalizedAgentEventResult = EvaluationResponse & {
+    deduplicated: boolean;
+    source: AgentEventSource;
+    finalPrompt?: string;
 };
 export type EvaluationResponse = {
     decision: "allow" | "deny" | "ask";
     decisionId: string;
     summary: string;
     resolutionGuidance?: string;
+    /** Agent-native interaction data returned after a human answers in an OpenLeash client. */
+    resolutionPayload?: Record<string, unknown>;
     question?: string;
     results: PolicyDecision[];
+};
+export type OpenLeashAttentionEvent = {
+    schemaVersion: "2026-07-19.v1";
+    id: string;
+    decisionId?: string;
+    kind: "approval" | "question" | "plan_review" | "completed" | "subagent_completed" | "blocked";
+    state: "waiting" | "resolved";
+    title: string;
+    body?: string;
+    createdAt: string;
+    agent: {
+        kind: string;
+        name: string;
+        hostname: string;
+    };
+    session: {
+        id: string;
+        projectPath?: string;
+    };
+    interaction?: {
+        type: "approval";
+    } | {
+        type: "questions";
+        questions: Array<{
+            question: string;
+            header?: string;
+            multiSelect: boolean;
+            options: Array<{
+                label: string;
+                description?: string;
+            }>;
+        }>;
+    } | {
+        type: "plan";
+        markdown?: string;
+        originalInput: Record<string, unknown>;
+    };
 };
 export type MobileIdentityProvider = {
     id: string;
@@ -1231,6 +1444,8 @@ export type MobileStateResponse = {
 export type MobileDecisionResolveRequest = {
     resolution: "allow" | "deny";
     resolutionGuidance?: string;
+    /** Structured response for agent-native questions and plan review. */
+    response?: Record<string, unknown>;
 };
 export type MobileDecisionResolveResponse = {
     id: string;

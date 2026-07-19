@@ -1123,8 +1123,45 @@ export type EvaluationResponse = {
   decisionId: string;
   summary: string;
   resolutionGuidance?: string;
+  /** Agent-native interaction data returned after a human answers in an OpenLeash client. */
+  resolutionPayload?: Record<string, unknown>;
   question?: string;
   results: PolicyDecision[];
+};
+
+export type OpenLeashAttentionEvent = {
+  schemaVersion: "2026-07-19.v1";
+  id: string;
+  decisionId?: string;
+  kind:
+    | "approval"
+    | "question"
+    | "plan_review"
+    | "completed"
+    | "subagent_completed"
+    | "blocked";
+  state: "waiting" | "resolved";
+  title: string;
+  body?: string;
+  createdAt: string;
+  agent: { kind: string; name: string; hostname: string };
+  session: { id: string; projectPath?: string };
+  interaction?:
+    | { type: "approval" }
+    | {
+        type: "questions";
+        questions: Array<{
+          question: string;
+          header?: string;
+          multiSelect: boolean;
+          options: Array<{ label: string; description?: string }>;
+        }>;
+      }
+    | {
+        type: "plan";
+        markdown?: string;
+        originalInput: Record<string, unknown>;
+      };
 };
 
 export type MobileIdentityProvider = {
@@ -1244,6 +1281,8 @@ export type MobileStateResponse = {
 export type MobileDecisionResolveRequest = {
   resolution: "allow" | "deny";
   resolutionGuidance?: string;
+  /** Structured response for agent-native questions and plan review. */
+  response?: Record<string, unknown>;
 };
 
 export type MobileDecisionResolveResponse = {
