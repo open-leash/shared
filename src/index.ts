@@ -70,7 +70,8 @@ export type PluginPermission =
   | "log:write"
   | "signal:write"
   | "usage:write"
-  | "notification:send";
+  | "notification:send"
+  | "island:publish";
 
 export type PluginEffect =
   | "observe"
@@ -382,7 +383,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     runtime: "openleash-core",
     entrypoint: "plugins/blast-radius",
     events: ["tool.beforeUse"],
-    permissions: ["event:read", "tool:read", "decision:write", "audit:write", "log:write", "signal:write"],
+    permissions: ["event:read", "tool:read", "decision:write", "audit:write", "log:write", "signal:write", "island:publish"],
     effects: ["observe", "ask", "deny"],
     ordering: { priority: 220, before: ["openleash.rules-enforcer", "openleash.mcp-scanner"] },
     configSchema: {
@@ -640,6 +641,80 @@ export type PluginNotificationRequest = {
 export type PluginNotificationResult = {
   sent: boolean;
   deduped: boolean;
+};
+
+export type PluginIslandTone = "neutral" | "info" | "success" | "warning" | "danger";
+export type PluginIslandActivityStatus = "queued" | "running" | "waiting" | "completed" | "failed";
+export type PluginIslandProgress = { current: number; total?: number; label?: string };
+
+export type PluginIslandAction =
+  | { id: string; label: string; type: "open-session" }
+  | { id: string; label: string; type: "open-plugin-settings" }
+  | { id: string; label: string; type: "open-plugin-outcome"; outcomeId: string };
+
+export type PluginIslandBaseRequest = {
+  /** Stable within the plugin. Re-publishing the same key updates the existing contribution. */
+  key: string;
+  /** Defaults to the current event session. */
+  sessionId?: string;
+  /** Expiring contributions prevent stale plugin UI. Defaults to 120 seconds. */
+  ttlSeconds?: number;
+  action?: PluginIslandAction;
+};
+
+export type PluginIslandAnnotationRequest = PluginIslandBaseRequest & {
+  label: string;
+  detail?: string;
+  value?: string;
+  tone?: PluginIslandTone;
+};
+
+export type PluginIslandActivityRequest = PluginIslandBaseRequest & {
+  title: string;
+  detail?: string;
+  status: PluginIslandActivityStatus;
+  progress?: PluginIslandProgress;
+  tone?: PluginIslandTone;
+};
+
+export type PluginIslandStatusRequest = Omit<PluginIslandBaseRequest, "sessionId"> & {
+  title: string;
+  detail?: string;
+  tone?: PluginIslandTone;
+  progress?: PluginIslandProgress;
+  relatedSessionIds?: string[];
+};
+
+export type PluginIslandClearRequest = { key: string; sessionId?: string };
+export type PluginIslandPublishRequest =
+  | ({ kind: "annotation" } & PluginIslandAnnotationRequest)
+  | ({ kind: "activity" } & PluginIslandActivityRequest)
+  | ({ kind: "status" } & PluginIslandStatusRequest);
+
+export type PluginIslandContribution = {
+  schemaVersion: "2026-07-20.plugin-island.v1";
+  id: string;
+  pluginId: string;
+  kind: PluginIslandPublishRequest["kind"];
+  key: string;
+  sessionId?: string;
+  agentKind?: string;
+  projectPath?: string;
+  label?: string;
+  title?: string;
+  detail?: string;
+  value?: string;
+  tone: PluginIslandTone;
+  status?: PluginIslandActivityStatus;
+  progress?: PluginIslandProgress;
+  action?: PluginIslandAction;
+  relatedSessionIds?: string[];
+  updatedAt: string;
+  expiresAt: string;
+};
+
+export type PluginIslandPublishResult = {
+  contribution: PluginIslandContribution;
 };
 
 export type PluginLogLevel = "debug" | "info" | "warn" | "error" | "security";
@@ -1010,6 +1085,12 @@ export type PluginCapabilities = {
   };
   notification: {
     send(request: PluginNotificationRequest): Promise<PluginNotificationResult>;
+  };
+  island: {
+    annotateSession(request: PluginIslandAnnotationRequest): Promise<PluginIslandPublishResult>;
+    reportActivity(request: PluginIslandActivityRequest): Promise<PluginIslandPublishResult>;
+    publishStatus(request: PluginIslandStatusRequest): Promise<PluginIslandPublishResult>;
+    clear(request: PluginIslandClearRequest): Promise<void>;
   };
   log: {
     emit(request: PluginLogRequest): Promise<PluginLogRecord>;
