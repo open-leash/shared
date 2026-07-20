@@ -1030,6 +1030,8 @@ export type PluginIslandContribution = {
     key: string;
     sessionId?: string;
     agentKind?: string;
+    /** Host-derived stable enrolled agent runtime identifier when available. */
+    agentId?: string;
     projectPath?: string;
     label?: string;
     title?: string;
