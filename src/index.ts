@@ -81,10 +81,8 @@ export type PluginEffect =
   | "notify"
   | "inventory";
 
-export type PluginRuntime =
-  | "node"
-  | "openleash-core"
-  | "container";
+/** Plugins are always isolated OCI containers. */
+export type PluginRuntime = "container";
 
 export type PluginContainerPlacement = "edge" | "server" | "either";
 
@@ -96,6 +94,8 @@ export type PluginContainerExecution = {
   /** Production releases pin the immutable image digest separately from the human-readable tag. */
   digest?: string;
   healthPath?: string;
+  /** Generic normalized pipeline-event endpoint. */
+  eventPath?: string;
   transformPath?: string;
   toolExecutePath?: string;
   /** Loopback-only port used by the desktop edge runtime; never exposed publicly. */
@@ -230,6 +230,38 @@ export type PluginSettingState = {
   updatedAt?: string;
 };
 
+export function firstPartyEventContainer(
+  slug: string,
+  version: string,
+  options: Partial<PluginContainerExecution> = {},
+): PluginContainerExecution {
+  const edgePorts: Record<string, number> = {
+    "blast-radius": 9351,
+    "sensitive-access": 9352,
+    "data-leakage-prevention": 9353,
+    "rules-enforcer": 9354,
+    "mcp-scanner": 9355,
+    "code-scanner": 9356,
+    "skill-scanner": 9357,
+    "siem-exporter": 9358,
+  };
+  return {
+    type: "container",
+    placement: "either",
+    protocol: "openleash-container-plugin.v1",
+    image: `ghcr.io/open-leash/plugin-${slug}:${version}`,
+    healthPath: "/healthz",
+    eventPath: "/v1/events",
+    edgePort: edgePorts[slug],
+    timeoutMs: 30_000,
+    failureMode: "closed",
+    isolation: "shared-trusted",
+    resources: { memoryMb: 256, cpuShares: 256 },
+    storage: { persistent: false },
+    ...options,
+  };
+}
+
 export const FIRST_PARTY_PLUGIN_MANIFESTS = [
   {
     id: "openleash.prompt-compression",
@@ -247,6 +279,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
       image: "ghcr.io/open-leash/plugin-token-saver:1.1.3",
       digest: "sha256:a4b393aaea6867516c800e0c8381e03a451750a497d76870725dc8d3eaf1ffd3",
       healthPath: "/healthz",
+      eventPath: "/v1/events",
       transformPath: "/v1/transform",
       toolExecutePath: "/v1/tools/execute",
       edgePort: 9331,
@@ -257,7 +290,7 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
       storage: { persistent: true, volumeName: "openleash-token-saver-data" }
     },
     entrypoint: "container",
-    events: ["provider.request.beforeSend", "plugin.tool.execute", "prompt.beforeSubmit"],
+    events: ["provider.request.beforeSend", "plugin.tool.execute"],
     permissions: ["event:read", "prompt:read", "prompt:write", "provider-request:read", "provider-request:write", "local-model:run", "storage:read", "storage:write", "audit:write", "log:write", "usage:write", "island:publish"],
     effects: ["transform", "observe"],
     ordering: { priority: 100, before: ["openleash.dlp"] },
@@ -294,8 +327,9 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     repositoryUrl: "https://github.com/open-leash/plugin-skill-scanner",
     version: "1.0.2",
     publisher: "openleash",
-    runtime: "openleash-core",
-    entrypoint: "plugins/skill-scanner",
+    runtime: "container",
+    execution: firstPartyEventContainer("skill-scanner", "1.0.2"),
+    entrypoint: "container",
     events: ["openleash.startup", "agent.detected", "skill.detected", "skill.changed"],
     permissions: ["event:read", "filesystem:read", "decision:write", "model:invoke", "audit:write", "log:write", "signal:write", "notification:send"],
     effects: ["observe", "ask", "inventory"],
@@ -314,8 +348,9 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     repositoryUrl: "https://github.com/open-leash/plugin-data-leakage-prevention",
     version: "1.0.0",
     publisher: "openleash",
-    runtime: "openleash-core",
-    entrypoint: "plugins/dlp",
+    runtime: "container",
+    execution: firstPartyEventContainer("data-leakage-prevention", "1.0.0"),
+    entrypoint: "container",
     events: ["prompt.beforeSubmit"],
     permissions: ["event:read", "prompt:read", "prompt:write", "decision:write", "model:invoke", "audit:write", "signal:write"],
     effects: ["transform", "deny", "observe"],
@@ -348,8 +383,9 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     repositoryUrl: "https://github.com/open-leash/plugin-sensitive-access",
     version: "1.0.0",
     publisher: "openleash",
-    runtime: "openleash-core",
-    entrypoint: "plugins/sensitive-access",
+    runtime: "container",
+    execution: firstPartyEventContainer("sensitive-access", "1.0.0"),
+    entrypoint: "container",
     events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse"],
     permissions: ["event:read", "prompt:read", "tool:read", "model:invoke", "decision:write", "audit:write", "log:write", "signal:write"],
     effects: ["observe", "ask", "deny"],
@@ -378,10 +414,11 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     name: "blast-radius",
     description: "Block destructive tool use before agents damage files, databases, or infrastructure.",
     repositoryUrl: "https://github.com/open-leash/plugin-blast-radius",
-    version: "1.0.0",
+    version: "1.0.2",
     publisher: "openleash",
-    runtime: "openleash-core",
-    entrypoint: "plugins/blast-radius",
+    runtime: "container",
+    execution: firstPartyEventContainer("blast-radius", "1.0.2"),
+    entrypoint: "container",
     events: ["prompt.beforeSubmit", "tool.beforeUse"],
     permissions: ["event:read", "prompt:read", "tool:read", "decision:write", "audit:write", "log:write", "signal:write", "island:publish"],
     effects: ["observe", "ask", "deny"],
@@ -412,8 +449,9 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     repositoryUrl: "https://github.com/open-leash/plugin-rules-enforcer",
     version: "1.0.0",
     publisher: "openleash",
-    runtime: "openleash-core",
-    entrypoint: "plugins/rules-enforcer",
+    runtime: "container",
+    execution: firstPartyEventContainer("rules-enforcer", "1.0.0"),
+    entrypoint: "container",
     events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse"],
     permissions: ["event:read", "prompt:read", "tool:read", "decision:write", "model:invoke", "audit:write", "log:write", "signal:write", "usage:write", "notification:send"],
     effects: ["observe", "ask", "deny"],
@@ -450,8 +488,9 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     repositoryUrl: "https://github.com/open-leash/plugin-mcp-scanner",
     version: "1.0.0",
     publisher: "openleash",
-    runtime: "openleash-core",
-    entrypoint: "plugins/mcp-scanner",
+    runtime: "container",
+    execution: firstPartyEventContainer("mcp-scanner", "1.0.0"),
+    entrypoint: "container",
     events: ["tool.beforeUse", "tool.afterUse"],
     permissions: ["event:read", "tool:read", "audit:write", "signal:write"],
     effects: ["observe", "inventory"],
@@ -470,8 +509,11 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS = [
     repositoryUrl: "https://github.com/open-leash/plugin-siem-exporter",
     version: "1.0.0",
     publisher: "openleash",
-    runtime: "openleash-core",
-    entrypoint: "plugins/siem-exporter",
+    runtime: "container",
+    execution: firstPartyEventContainer("siem-exporter", "1.0.0", {
+      failureMode: "open",
+    }),
+    entrypoint: "container",
     events: ["prompt.beforeSubmit", "agent.response", "tool.beforeUse", "tool.afterUse", "session.started", "session.ended", "skill.detected", "skill.changed", "skill.removed", "log.emitted"],
     permissions: ["event:read", "prompt:read", "tool:read", "network:access", "audit:write", "log:write"],
     effects: ["observe", "notify"],
@@ -962,7 +1004,9 @@ export function buildOpenLeashClientViewModel({
       return {
         id: plugin.id,
         packageId: pluginPackageId(plugin),
-        displayName: plugin.name || pluginPackageId(plugin),
+        // A plugin's package slug is its product-facing identity. Do not turn
+        // it into a title-cased product name in clients.
+        displayName: pluginPackageId(plugin),
         description: plugin.marketplace?.shortDescription || plugin.description,
         category: pluginCategoryId(plugin),
         installed: true,
